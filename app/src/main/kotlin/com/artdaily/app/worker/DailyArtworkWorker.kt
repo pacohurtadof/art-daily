@@ -16,6 +16,7 @@ import com.artdaily.app.data.settings.WallpaperPreferences
 import com.artdaily.app.data.sync.ArtworkSyncService
 import com.artdaily.app.domain.usecase.GetArtworkOfTheDayUseCase
 import com.artdaily.app.wallpaper.WallpaperApplier
+import com.artdaily.app.wallpaper.WallpaperTarget
 import com.artdaily.app.widget.ArtWidget
 import com.artdaily.app.widget.WidgetImageDownloader
 import com.artdaily.app.widget.toWidgetState
@@ -73,9 +74,12 @@ class DailyArtworkWorker @AssistedInject constructor(
         if (wallpaperPreferences.autoChangeEnabled.value) {
             // widgetId=0 = "obra del día" de la app principal, no de un widget — mismo
             // convenio que usa HomeViewModel. No depende de que haya widgets colocados.
+            // Destino fijo en BOTH — antes era configurable en Ajustes, se sacó el
+            // 2026-08-19 (redundante con el diálogo manual de Detalle) y acá no hay a
+            // quién preguntarle, el worker corre solo sin UI.
             val artwork = getArtworkOfTheDay(widgetId = 0)
             val imageUrl = artwork?.imageUrlFull ?: artwork?.imageUrlThumbnail
-            wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)
+            wallpaperApplier.apply(imageUrl, WallpaperTarget.BOTH)
         }
 
         return Result.success()

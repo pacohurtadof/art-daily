@@ -62,9 +62,7 @@
 
     <!-- Ajustes -->
     <string name="settings_auto_wallpaper_title">Cambiar fondo de pantalla automáticamente</string>
-    <string name="settings_auto_wallpaper_subtitle">Usa la obra del día, una vez al día, junto con la actualización del widget.</string>
-    <string name="settings_wallpaper_target_title">Dónde aplicar el fondo</string>
-    <string name="settings_wallpaper_target_subtitle">Se usa tanto para el cambio automático como para \"Usar como fondo de pantalla\" desde Detalle.</string>
+    <string name="settings_auto_wallpaper_subtitle">Usa la obra del día, una vez al día, junto con la actualización del widget. Se aplica a pantalla de inicio y bloqueo.</string>
 
     <!-- Fondo de pantalla: destino (WallpaperTarget) -->
     <string name="wallpaper_target_home">Solo pantalla de inicio</string>

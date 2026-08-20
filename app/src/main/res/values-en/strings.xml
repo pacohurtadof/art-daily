@@ -56,9 +56,7 @@
 
     <!-- Ajustes -->
     <string name="settings_auto_wallpaper_title">Change wallpaper automatically</string>
-    <string name="settings_auto_wallpaper_subtitle">Uses the artwork of the day, once a day, along with the widget update.</string>
-    <string name="settings_wallpaper_target_title">Where to apply the wallpaper</string>
-    <string name="settings_wallpaper_target_subtitle">Used both for the automatic change and for \"Set as wallpaper\" from Detail.</string>
+    <string name="settings_auto_wallpaper_subtitle">Uses the artwork of the day, once a day, along with the widget update. Applies to both the home and lock screen.</string>
 
     <!-- Fondo de pantalla: destino (WallpaperTarget) -->
     <string name="wallpaper_target_home">Home screen only</string>

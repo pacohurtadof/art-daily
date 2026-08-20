@@ -1,5 +1,37 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Se saca el selector de destino del fondo de pantalla de Ajustes
+
+Observación del usuario: "no veo propósito en la parte de configuración el tener la
+opción de definir si setear la imagen de fondo en home o en lock screen o ambas, ya
+que al seleccionar una imagen te da esas mismas opciones" — el selector de Ajustes y
+el diálogo manual de Detalle preguntaban lo mismo dos veces, y como el diálogo
+manual siempre vuelve a preguntar, el valor guardado en Ajustes no se notaba nunca en
+la práctica para ese flujo.
+
+Se le presentaron 3 caminos: (1) sacar el diálogo manual y aplicar directo con lo de
+Ajustes, (2) sacar el selector de Ajustes y fijar el automático en "ambas pantallas",
+o (3) sacar el selector de Ajustes pero que el diálogo recuerde la última elección.
+Eligió el **camino 2**.
+
+**Cambios:**
+- `WallpaperPreferences`: se sacó `target`/`setTarget` — solo queda `autoChangeEnabled`.
+- `SettingsScreen`/`SettingsViewModel`: se sacó toda la sección "Dónde aplicar el
+  fondo" (título, subtítulo, 3 radio buttons) — Ajustes queda solo con el toggle,
+  cuyo subtítulo ahora aclara "se aplica a pantalla de inicio y bloqueo".
+- `DailyArtworkWorker`: el cambio automático usa `WallpaperTarget.BOTH` fijo en el
+  código (antes leía la preferencia) — no hay a quién preguntarle cuando corre solo.
+- `DetailViewModel`: ya no depende de `WallpaperPreferences` — el diálogo manual de
+  Detalle sigue preguntando cada vez (sin cambios ahí), simplemente arranca siempre
+  en `WallpaperTarget.BOTH` (el default del data class) en vez de una preferencia
+  guardada.
+- Strings de Ajustes para el destino (`settings_wallpaper_target_*`) eliminadas de
+  ambos idiomas — las de `WallpaperTarget` (`wallpaper_target_home/lock/both`) se
+  mantienen, las sigue usando el diálogo de Detalle.
+
+Verificado en vivo: Ajustes solo muestra el toggle; el diálogo de Detalle sigue
+funcionando igual, precargado en "Home and lock screen" por defecto.
+
 ## 2026-08-19 (continuación) — Decisión: clasificar movimiento a mano, obra por obra
 
 Reacción del usuario al hueco estructural que quedó documentado arriba ("solo AIC

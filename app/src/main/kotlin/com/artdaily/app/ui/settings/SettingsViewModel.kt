@@ -2,7 +2,6 @@ package com.artdaily.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import com.artdaily.app.data.settings.WallpaperPreferences
-import com.artdaily.app.wallpaper.WallpaperTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
@@ -15,9 +14,6 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val autoChangeEnabled: StateFlow<Boolean> = wallpaperPreferences.autoChangeEnabled
-    val target: StateFlow<WallpaperTarget> = wallpaperPreferences.target
 
     fun setAutoChangeEnabled(enabled: Boolean) = wallpaperPreferences.setAutoChangeEnabled(enabled)
-
-    fun setTarget(target: WallpaperTarget) = wallpaperPreferences.setTarget(target)
 }

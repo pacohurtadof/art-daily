@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artdaily.app.data.local.FavoriteDao
 import com.artdaily.app.data.local.FavoriteEntity
-import com.artdaily.app.data.settings.WallpaperPreferences
 import com.artdaily.app.data.translation.TranslationResult
 import com.artdaily.app.data.translation.TranslationService
 import com.artdaily.app.wallpaper.WallpaperApplier
@@ -50,7 +49,6 @@ class DetailViewModel @Inject constructor(
     private val artworkRepository: ArtworkRepository,
     private val favoriteDao: FavoriteDao,
     private val wallpaperApplier: WallpaperApplier,
-    private val wallpaperPreferences: WallpaperPreferences,
     private val translationService: TranslationService
 ) : ViewModel() {
 
@@ -58,9 +56,10 @@ class DetailViewModel @Inject constructor(
         savedStateHandle.get<String>("artworkId").orEmpty(), "UTF-8"
     )
 
-    private val _uiState = MutableStateFlow(
-        DetailUiState(defaultWallpaperTarget = wallpaperPreferences.target.value)
-    )
+    // Sin preferencia guardada de destino (se sacó de Ajustes el 2026-08-19, era
+    // redundante con este mismo diálogo) — arranca siempre en BOTH, el default del
+    // data class; el usuario lo cambia acá mismo si quiere otra cosa.
+    private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
     init {
