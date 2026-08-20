@@ -1,5 +1,77 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Repo en GitHub + publicación real de artworks.db/delta.json
+
+Último pendiente explícito que quedaba del diseño original (CLAUDE.md, punto 13): la
+app nunca recibía obras nuevas después de instalada — `assets/artworks.db` solo
+alimentaba el primer arranque, y no había ningún mecanismo de sync.
+
+**Infraestructura nueva (requirió al usuario, no se podía decidir solo):**
+- El proyecto NO era un repo git todavía (`git status` confirmaba "not a git
+  repository"). Se decidió con el usuario: repo en **GitHub Releases**, **público**
+  (un repo privado necesitaría un token en la app solo para bajar los assets — sin
+  secretos que proteger en el código de todas formas, público evita esa complejidad
+  entera).
+- `gh` (CLI de GitHub) no estaba instalado — se instaló vía `brew install gh`.
+- Git no tenía identidad configurada en esta máquina (ni `user.name` ni `user.email`)
+  — se configuró (solo para este repo, no global) con el email de la sesión.
+- El usuario corrió `gh auth login` a mano (flujo interactivo con navegador).
+- **Limpieza antes del primer commit**: se encontraron y excluyeron dos archivos
+  `.hprof` (heap dumps de ~730MB y ~740MB, sobras del bug de OOM ya arreglado el
+  2026-08-17, documentado en esta misma bitácora) — se borraron del disco, no tenían
+  ningún valor. También se agregó `.claude/` al `.gitignore` (settings/locks locales de
+  la sesión de Claude Code, no son parte del proyecto).
+- Repo creado: **https://github.com/pacohurtadof/art-daily** — commit inicial con las
+  114 archivos reales del proyecto (excluyendo lo anterior), pusheado a `main`.
+- Primer release publicado: `data-20260819`, con `artworks.db` (2179072 bytes) y
+  `delta.json` (copia del `artworks-delta-20260819.json` de hoy, con nombre de asset
+  ESTABLE sin fecha — la app siempre busca el asset literal `delta.json` del último
+  release, no le importa el nombre del archivo local).
+- `harvester/publish-release.sh` nuevo — automatiza este proceso para la próxima vez
+  que se corra el harvester (toma el delta más reciente por fecha, lo copia con nombre
+  estable, corre `gh release create` con el tag `data-YYYYMMDD`).
+
+**App — `ArtworkSyncService` nuevo (`app/data/sync/`):**
+- `GitHubApi` (Retrofit): `GET /repos/pacohurtadof/art-daily/releases/latest` (sin key,
+  límite de tasa generoso para uso no autenticado) + un método `@Url` para bajar el
+  asset real — mismo patrón que `RijksApi.resolve` en el harvester, porque GitHub
+  redirige la descarga a otro dominio con una URL firmada
+  (`release-assets.githubusercontent.com`, verificado en vivo — puede cambiar sin
+  aviso, por eso no se lista en el network security config, solo `api.github.com`/
+  `github.com`).
+- `SyncPreferences` (`SharedPreferences`, mismo patrón que `WallpaperPreferences`):
+  guarda el tag del último release ya sincronizado, para no volver a descargar/procesar
+  el mismo delta en cada corrida diaria del worker.
+- `ArtworkSyncService.syncIfNeeded()`: compara el tag del último release contra el
+  guardado: si es el mismo, no hace nada (`AlreadyUpToDate`); si es distinto, descarga
+  `delta.json` (deserializa directo a `List<Artwork>` — el harvester ya lo escribe en
+  ese formato exacto vía kotlinx.serialization) y hace `ArtworkDao.upsertAll()` (ese
+  método YA EXISTÍA, con un comentario que anticipaba exactamente este uso — quedó sin
+  llamar hasta hoy). Todo error cae a `Failed` en vez de relanzar — es best-effort.
+- **`NetworkModule.kt` nuevo** — primer uso real de Retrofit DENTRO de `:app` (antes
+  solo el harvester llamaba APIs en vivo; la app únicamente leía de Room). Mismo patrón
+  que `harvester/network/HttpClientFactory.kt`, como módulo Hilt.
+- `DailyArtworkWorker` ahora llama `artworkSyncService.syncIfNeeded()` como primer paso
+  de `doWork()`, antes de calcular la obra del día — así una obra recién sincronizada
+  ya es candidata inmediatamente. Se le agregó `Constraints(NetworkType.CONNECTED)` al
+  `PeriodicWorkRequest`/`OneTimeWorkRequest` (antes no tenía restricción de red
+  explícita — ahora si no hay conexión, WorkManager espera en vez de intentarlo a
+  ciegas y fallar la parte de red).
+- `network_security_config.xml`: agregado `api.github.com`/`github.com` a la lista
+  documentada (no es una restricción real — Android permite HTTPS a cualquier dominio
+  por defecto salvo que se bloquee explícito — pero mantiene la práctica ya establecida
+  de documentar qué dominios toca la app).
+
+**Verificado en vivo, end-to-end, en el emulador** (reinstall completo para que
+WorkManager re-programe el `PeriodicWorkRequest` con las constraints nuevas — con
+`ExistingPeriodicWorkPolicy.KEEP` un install incremental no reemplaza un work ya
+encolado): logcat mostró la secuencia real completa — `GET
+api.github.com/repos/.../releases/latest` → 200, descarga de `delta.json` desde
+`release-assets.githubusercontent.com` → 200 (3292790 bytes, coincide exacto con el
+tamaño real del archivo), `WM-WorkerWrapper: Worker result SUCCESS`. Confirmado por
+fuera de la app: `sync_prefs.xml` con `last_synced_tag=data-20260819`, y la tabla
+`artworks` de Room con exactamente 2001 filas (coincide con el release).
+
 ## 2026-08-19 (continuación) — Localización del texto propio de la app (strings.xml)
 
 Pregunta de seguimiento del usuario: "¿por qué no traduce directamente al idioma del

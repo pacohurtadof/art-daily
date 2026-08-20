@@ -151,12 +151,15 @@ art-daily/
       Detalle.
     - Localización del texto propio de la app a inglés (`res/values-en/`) — el resto
       de idiomas cae al español.
-13. Pendiente, ninguno bloqueante (orden sugerido, no un compromiso):
-    - **Publicar `artworks.db`/`delta.json` en algún lado real** (hoy solo viven en
-      `harvester/output/` local, se copian a mano a `assets/`) y que
-      `DailyArtworkWorker` sincronice el delta — hoy la app nunca recibe obras nuevas
-      después de instalada sin un reinstall completo con un `artworks.db` regenerado a
-      mano. Es el hueco arquitectónico más real que queda.
+13. ✅ **Publicación real de `artworks.db`/`delta.json` + sync** (2026-08-19): repo
+    público en GitHub (`github.com/pacohurtadof/art-daily`, requirió `git init` +
+    `gh auth login` del usuario — el proyecto no era un repo git hasta hoy), releases
+    con `gh release create` (`harvester/publish-release.sh` automatiza la próxima
+    publicación), y `ArtworkSyncService` nuevo en `:app` (primer uso real de Retrofit
+    dentro de la app, no solo del harvester) que `DailyArtworkWorker` llama en cada
+    corrida para bajar el `delta.json` del último release y hacerle `upsertAll` a Room.
+    Verificado en vivo end-to-end. Detalle completo en `docs/bitacora.md`.
+14. Pendiente, ninguno bloqueante (orden sugerido, no un compromiso):
     - Pantalla de **historial** — `HistoryDao` existe y se usa para el anti-repetición,
       pero no hay UI que lo muestre (el README original habla de "favoritos e
       historial").
