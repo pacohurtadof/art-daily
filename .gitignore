@@ -1,0 +1,11 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+harvester/output/
+.DS_Store
+*.hprof
+
+# Claude Code — settings/locks locales de esta máquina, no del proyecto.
+.claude/

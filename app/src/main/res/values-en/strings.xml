@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inglés — se activa solo si el idioma del dispositivo es inglés. Cualquier otro
+     idioma sin su propio values-<xx> cae al español de res/values/strings.xml. -->
+<resources>
+    <!-- Navegación (tabs) — el mismo texto se reusa como encabezado en cada pantalla -->
+    <string name="nav_home">Today</string>
+    <string name="nav_explore">Explore</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Compartidas entre varias pantallas -->
+    <string name="unknown_artist">Unknown artist</string>
+    <string name="action_add_to_favorites">Add to favorites</string>
+    <string name="action_remove_from_favorites">Remove from favorites</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="loading">Loading…</string>
+    <string name="label_period">Period</string>
+    <string name="label_movement">Movement</string>
+    <string name="label_museum">Museum</string>
+    <string name="label_century">Century</string>
+    <string name="century_ce">Century %1$d</string>
+    <string name="century_bce">Century %1$d BCE</string>
+
+    <!-- Hoy -->
+    <string name="home_no_artworks">No artworks available yet.</string>
+    <string name="home_view_details">View details</string>
+
+    <!-- Explorar -->
+    <string name="explore_subtitle">Filter by period, movement, museum, or century.</string>
+    <string name="explore_empty_results">No artworks match this filter.</string>
+
+    <!-- Favoritos -->
+    <string name="favorites_empty">You don\'t have any favorite artworks yet — tap them from \"Today\" or \"Explore\".</string>
+
+    <!-- Detalle -->
+    <string name="detail_not_found">This artwork could not be found.</string>
+    <string name="detail_wallpaper_button">Set as wallpaper</string>
+    <string name="detail_wallpaper_applying">Applying…</string>
+    <string name="detail_wallpaper_toast_success">Wallpaper updated</string>
+    <string name="detail_wallpaper_toast_error">Couldn\'t set the wallpaper</string>
+    <string name="detail_label_date">Date</string>
+    <string name="detail_label_classification">Classification</string>
+    <string name="detail_label_culture">Culture</string>
+    <string name="detail_label_country">Country</string>
+    <string name="detail_label_dimensions">Dimensions</string>
+    <string name="detail_label_accession_number">Accession no.</string>
+    <string name="detail_label_credit">Credit</string>
+    <string name="detail_label_license">License</string>
+    <string name="detail_about_artwork">About this artwork</string>
+    <string name="detail_view_original">View original</string>
+    <string name="detail_translate">Translate</string>
+    <string name="detail_translating">Translating…</string>
+    <string name="detail_translation_already_in_language">It\'s already in your language.</string>
+    <string name="detail_translation_failed">Couldn\'t translate — check your connection and try again.</string>
+    <string name="detail_view_on_museum_site">View on the museum\'s website</string>
+
+    <!-- Ajustes -->
+    <string name="settings_auto_wallpaper_title">Change wallpaper automatically</string>
+    <string name="settings_auto_wallpaper_subtitle">Uses the artwork of the day, once a day, along with the widget update.</string>
+    <string name="settings_wallpaper_target_title">Where to apply the wallpaper</string>
+    <string name="settings_wallpaper_target_subtitle">Used both for the automatic change and for \"Set as wallpaper\" from Detail.</string>
+
+    <!-- Fondo de pantalla: destino (WallpaperTarget) -->
+    <string name="wallpaper_target_home">Home screen only</string>
+    <string name="wallpaper_target_lock">Lock screen only</string>
+    <string name="wallpaper_target_both">Home and lock screen</string>
+
+    <!-- Widget de pantalla de inicio -->
+    <string name="widget_loading">Loading today\'s artwork…</string>
+    <string name="widget_config_title">ArtDaily — new widget</string>
+    <string name="widget_config_subtitle">Choose optional filters (leave everything on \"Any\" to not filter).</string>
+    <string name="widget_config_matching_count">%1$d artwork(s) match this filter.</string>
+    <string name="widget_config_no_match">No artworks match — try fewer filters.</string>
+    <string name="widget_config_saving">Saving…</string>
+    <string name="widget_config_add_button">Add widget</string>
+</resources>

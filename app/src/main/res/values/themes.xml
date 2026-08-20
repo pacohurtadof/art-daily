@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sin ícono/branding propio todavía (mismo gap ya anotado en el manifest) — usa el
+         ícono default del sistema, se reemplaza cuando haya assets de diseño reales. -->
+    <style name="Theme.ArtDaily.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="postSplashScreenTheme">@style/Theme.ArtDaily</item>
+    </style>
+
+    <style name="Theme.ArtDaily" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

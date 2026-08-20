@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Documenta explícitamente los únicos dominios que la app debería tocar hoy (harvester
+    aparte — esto es solo para :app). No es un firewall real (Android no ofrece uno a nivel
+    de manifest): el código solo llama estas URLs fijas de cualquier forma. Lo que sí hace:
+    bloquea HTTP sin cifrar (cleartext) por completo.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">collectionapi.metmuseum.org</domain>
+        <domain includeSubdomains="false">images.metmuseum.org</domain>
+        <domain includeSubdomains="false">api.artic.edu</domain>
+        <domain includeSubdomains="false">www.artic.edu</domain>
+    </domain-config>
+</network-security-config>
