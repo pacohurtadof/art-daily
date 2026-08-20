@@ -1,5 +1,40 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Ícono de launcher propio
+
+El usuario compartió una imagen (puente/estanque estilo Monet con una "A" superpuesta,
+generada con IA) para usar como ícono de la app — cierra el punto que quedaba pendiente
+en CLAUDE.md ("Ícono de launcher propio — hoy usa el genérico del sistema").
+
+**Herramientas**: solo había `sips` disponible (sin ImageMagick/PIL) — se instaló
+Pillow (`pip install pillow`) para poder armar bien las capas del ícono adaptativo
+(padding transparente, máscara circular), algo que `sips` no puede hacer solo.
+
+**Análisis de la imagen fuente** (1254×1254, `docs/assets/app_icon_source.png` — se
+guardó una copia en el repo para poder regenerar el ícono más adelante): el cuadrado
+redondeado con el arte real ocupa aprox. x:[70,1182] y:[51,1190] del lienzo, con un
+margen blanco/crema (~#FCFCFC) alrededor — separación limpia entre "el arte" y "el
+fondo", ideal para un ícono adaptativo (API 26+, que es lo único que corre en este
+`minSdk`).
+
+**Se generó el set completo:**
+- **Ícono adaptativo** (`mipmap-anydpi-v26/ic_launcher.xml`/`_round.xml`): capa de
+  fondo = color sólido `#FCFCFC` (muestreado del margen de la imagen, para que se vea
+  continuo con el arte en vez de un recuadro de otro color) + capa de primer plano =
+  el arte recortado, insertado al ~70% del lienzo de 108dp (zona segura estándar de
+  Android, para que ningún launcher lo recorte mal).
+- **Íconos legacy** (`mipmap-{m,h,xh,xxh,xxxh}dpi/ic_launcher.png` +
+  `ic_launcher_round.png`, este último con máscara circular real vía Pillow) — de
+  respaldo para contextos que no leen el ícono adaptativo; en la práctica, con
+  `minSdk=26`, el adaptativo es el que se ve en todos los dispositivos reales.
+- `AndroidManifest.xml`: `android:icon`/`android:roundIcon` agregados al fin (antes
+  ausentes a propósito, "se agrega más adelante" — ya llegó ese momento).
+
+**Verificado en vivo**: reinstalado en el emulador, el selector de apps muestra el
+ícono nuevo recortado en círculo (el launcher de este Pixel usa máscara circular),
+consistente con el resto de los íconos de Google alrededor. La app sigue abriendo
+normal.
+
 ## 2026-08-19 (continuación) — Se saca el selector de destino del fondo de pantalla de Ajustes
 
 Observación del usuario: "no veo propósito en la parte de configuración el tener la

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo del ícono adaptativo (mipmap-anydpi-v26/ic_launcher.xml) — muestreado del
+         margen de la imagen fuente (docs/assets/app_icon_source.png), para que se vea
+         continuo con la capa de arte en vez de un recuadro de otro color detrás. -->
+    <color name="ic_launcher_background">#FCFCFC</color>
+</resources>
