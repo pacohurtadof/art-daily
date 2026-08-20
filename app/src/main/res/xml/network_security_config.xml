@@ -13,5 +13,11 @@
         <domain includeSubdomains="false">images.metmuseum.org</domain>
         <domain includeSubdomains="false">api.artic.edu</domain>
         <domain includeSubdomains="false">www.artic.edu</domain>
+        <!-- Sync de artworks nuevas (ArtworkSyncService, 2026-08-19) — api.github.com da
+             el último release, el asset real se baja de un dominio de CDN firmado que
+             GitHub puede cambiar sin aviso (visto: release-assets.githubusercontent.com,
+             antes objects.githubusercontent.com), por eso ese no se lista acá. -->
+        <domain includeSubdomains="false">api.github.com</domain>
+        <domain includeSubdomains="false">github.com</domain>
     </domain-config>
 </network-security-config>
