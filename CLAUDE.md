@@ -166,6 +166,14 @@ art-daily/
     todo (no solo oculto). Room subió a v3. Verificado en vivo. Detalle en
     `docs/bitacora.md`.
 15. Pendiente, ninguno bloqueante (orden sugerido, no un compromiso):
+    - **Clasificar movimiento a mano, obra por obra** (2026-08-19, decisión explícita
+      del usuario tras la investigación de por qué había tan pocos movimientos — ver
+      punto anterior/`docs/bitacora.md`). Se evaluaron 3 caminos: diccionario
+      artista→movimiento, Wikidata como fuente automática, o etiquetar obras
+      individuales; el usuario eligió el tercero ("más acertado") a propósito, aunque
+      sea el que más trabajo manual pide — más preciso que inferir por artista o
+      fuente automática. Alcance (cuántas/cuáles obras, mecanismo de captura) sin
+      definir todavía — retomar cuando el usuario lo pida.
     - Pantalla de **historial** — `HistoryDao` existe y se usa para el anti-repetición,
       pero no hay UI que lo muestre (el README original habla de "favoritos e
       historial").

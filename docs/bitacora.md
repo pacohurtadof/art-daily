@@ -1,5 +1,24 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Decisión: clasificar movimiento a mano, obra por obra
+
+Reacción del usuario al hueco estructural que quedó documentado arriba ("solo AIC
+tiene el dato, el techo sigue bajo"): "parece que vamos a tener que agregar esos
+datos manualmente, los movimientos". Antes de ponerse a escribir algo, se le
+plantearon 3 caminos con esfuerzo muy distinto:
+
+1. Diccionario **artista → movimiento** (chico, a mano, se aplica solo a todas las
+   obras de ese artista — mucho menos trabajo que por obra).
+2. **Wikidata** como fuente automática (P135 "movement" de cada artista — esto ya
+   estaba anotado en CLAUDE.md como plan futuro de enriquecimiento; el Met además ya
+   da el ID de Wikidata de cada artista en varios registros).
+3. Etiquetar **obras individuales** a mano.
+
+El usuario eligió el **camino 3** a propósito — "más acertado" — aunque sea el de
+más trabajo manual: prioriza precisión sobre apalancamiento. Pidió posponerlo (queda
+anotado como pendiente en CLAUDE.md, sin alcance definido todavía — cuántas obras,
+mecanismo de captura). No se tocó código en este punto.
+
 ## 2026-08-19 (continuación) — Diccionario de movimientos ampliado
 
 Pregunta del usuario: "¿por qué tenemos tan pocos movimientos?" (Explorar mostraba
