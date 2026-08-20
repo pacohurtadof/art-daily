@@ -18,16 +18,15 @@
     <string name="label_period">Period</string>
     <string name="label_movement">Movement</string>
     <string name="label_museum">Museum</string>
-    <string name="label_century">Century</string>
-    <string name="century_ce">Century %1$d</string>
-    <string name="century_bce">Century %1$d BCE</string>
+    <string name="label_years">Years</string>
+    <string name="year_bce">%1$d BCE</string>
 
     <!-- Hoy -->
     <string name="home_no_artworks">No artworks available yet.</string>
     <string name="home_view_details">View details</string>
 
     <!-- Explorar -->
-    <string name="explore_subtitle">Filter by period, movement, museum, or century.</string>
+    <string name="explore_subtitle">Filter by period, movement, or years.</string>
     <string name="explore_empty_results">No artworks match this filter.</string>
 
     <!-- Favoritos -->

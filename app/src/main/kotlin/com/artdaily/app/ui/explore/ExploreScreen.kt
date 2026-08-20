@@ -20,15 +20,15 @@ import androidx.compose.ui.unit.dp
 import com.artdaily.app.R
 import com.artdaily.app.ui.common.ArtworkThumbnail
 import com.artdaily.app.ui.common.FilterSection
-import com.artdaily.app.ui.common.formatCentury
+import com.artdaily.app.ui.common.YearRangeSelector
 import com.artdaily.core.model.Artwork
 
 /**
  * Todo — encabezado de filtros y grid de resultados — vive dentro de UN SOLO
  * `LazyVerticalGrid` (el encabezado ocupa el ancho completo vía `GridItemSpan`), no un
- * `Column` fijo + grid separado. Con 4 museos y una decena de periodos/movimientos, la
- * sección de filtros por sí sola ya no cabe en una pantalla — si no scrollea junto con el
- * resto, empuja los resultados fuera de vista sin forma de bajar a verlos.
+ * `Column` fijo + grid separado. Con periodo/movimiento/años, la sección de filtros por
+ * sí sola ya no cabe en una pantalla — si no scrollea junto con el resto, empuja los
+ * resultados fuera de vista sin forma de bajar a verlos.
  */
 @Composable
 fun ExploreScreen(viewModel: ExploreViewModel, onArtworkClick: (Artwork) -> Unit) {
@@ -74,13 +74,12 @@ private fun FilterHeader(state: ExploreUiState, viewModel: ExploreViewModel) {
             title = stringResource(R.string.label_movement), options = state.available.movements,
             selected = state.selectedMovement, label = { it }, onSelect = viewModel::selectMovement
         )
-        FilterSection(
-            title = stringResource(R.string.label_museum), options = state.available.museums,
-            selected = state.selectedMuseum, label = { it }, onSelect = viewModel::selectMuseum
-        )
-        FilterSection(
-            title = stringResource(R.string.label_century), options = state.available.centuries,
-            selected = state.selectedCentury, label = { formatCentury(it) }, onSelect = viewModel::selectCentury
+        YearRangeSelector(
+            minYear = state.available.minYear,
+            maxYear = state.available.maxYear,
+            selectedFrom = state.yearFrom,
+            selectedTo = state.yearTo,
+            onRangeSelected = viewModel::selectYearRange
         )
     }
 }

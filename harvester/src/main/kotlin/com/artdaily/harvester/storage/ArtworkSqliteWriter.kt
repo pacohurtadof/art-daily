@@ -113,15 +113,16 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                 )
                 """.trimIndent()
             )
+            // museum/century -> yearFrom/yearTo el 2026-08-19 (ver ArtworkFilter en core-model).
             stmt.execute(
                 """
                 CREATE TABLE IF NOT EXISTS widget_config (
                     widgetId INTEGER PRIMARY KEY NOT NULL,
                     period TEXT,
-                    century INTEGER,
                     movement TEXT,
                     artistName TEXT,
-                    museum TEXT,
+                    yearFrom INTEGER,
+                    yearTo INTEGER,
                     avoidRepeatDays INTEGER NOT NULL
                 )
                 """.trimIndent()

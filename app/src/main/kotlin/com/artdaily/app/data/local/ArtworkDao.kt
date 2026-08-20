@@ -18,24 +18,28 @@ interface ArtworkDao {
      * Filtros opcionales: cualquiera en `null` se ignora (patrón `:param IS NULL OR columna
      * = :param`, estándar en Room para consultas con filtros dinámicos sin armar SQL a mano).
      * Usado por el `SelectionEngine` (sección 9 de `docs/etapa2-diseno-arquitectura.md`).
+     *
+     * `yearFrom`/`yearTo` reemplazaron a `museum`/`century` el 2026-08-19 — un rango de años
+     * en vez de un chip de siglo entero; comparan contra `creationYearStart` solamente (igual
+     * que el `century` que reemplazan, que también se derivaba solo de ese campo).
      */
     @Query(
         """
         SELECT * FROM artworks
         WHERE (:period IS NULL OR period = :period)
-        AND (:century IS NULL OR century = :century)
         AND (:movement IS NULL OR movement = :movement)
         AND (:artistName IS NULL OR artistName = :artistName)
-        AND (:museum IS NULL OR museum = :museum)
+        AND (:yearFrom IS NULL OR creationYearStart >= :yearFrom)
+        AND (:yearTo IS NULL OR creationYearStart <= :yearTo)
         AND rankScore >= :minRankScore
         """
     )
     suspend fun getFiltered(
         period: String?,
-        century: Int?,
         movement: String?,
         artistName: String?,
-        museum: String?,
+        yearFrom: Int?,
+        yearTo: Int?,
         minRankScore: Float
     ): List<ArtworkEntity>
 
@@ -45,19 +49,19 @@ interface ArtworkDao {
         """
         SELECT COUNT(*) FROM artworks
         WHERE (:period IS NULL OR period = :period)
-        AND (:century IS NULL OR century = :century)
         AND (:movement IS NULL OR movement = :movement)
         AND (:artistName IS NULL OR artistName = :artistName)
-        AND (:museum IS NULL OR museum = :museum)
+        AND (:yearFrom IS NULL OR creationYearStart >= :yearFrom)
+        AND (:yearTo IS NULL OR creationYearStart <= :yearTo)
         AND rankScore >= :minRankScore
         """
     )
     suspend fun countFiltered(
         period: String?,
-        century: Int?,
         movement: String?,
         artistName: String?,
-        museum: String?,
+        yearFrom: Int?,
+        yearTo: Int?,
         minRankScore: Float
     ): Int
 
@@ -67,11 +71,13 @@ interface ArtworkDao {
     @Query("SELECT DISTINCT movement FROM artworks WHERE movement IS NOT NULL ORDER BY movement")
     suspend fun getDistinctMovements(): List<String>
 
-    @Query("SELECT DISTINCT museum FROM artworks WHERE museum IS NOT NULL ORDER BY museum")
-    suspend fun getDistinctMuseums(): List<String>
+    /** Bordes reales del selector de rango de años — `null` si ninguna obra tiene
+     * `creationYearStart` conocido. */
+    @Query("SELECT MIN(creationYearStart) FROM artworks WHERE creationYearStart IS NOT NULL")
+    suspend fun getMinYear(): Int?
 
-    @Query("SELECT DISTINCT century FROM artworks WHERE century IS NOT NULL ORDER BY century")
-    suspend fun getDistinctCenturies(): List<Int>
+    @Query("SELECT MAX(creationYearStart) FROM artworks WHERE creationYearStart IS NOT NULL")
+    suspend fun getMaxYear(): Int?
 
     /** Usado por el sync del delta.json (`INSERT OR REPLACE` por id, igual que el harvester). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

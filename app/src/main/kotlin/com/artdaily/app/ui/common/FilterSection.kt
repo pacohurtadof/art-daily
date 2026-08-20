@@ -7,18 +7,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.artdaily.app.R
 
 /**
- * Fila de chips de un solo filtro (periodo, movimiento, museo o siglo). Compartido entre
+ * Fila de chips de un solo filtro (periodo o movimiento — museo y siglo se sacaron el
+ * 2026-08-19, el segundo reemplazado por [YearRangeSelector]). Compartido entre
  * `ArtWidgetConfigActivity` (filtro de un widget) y `ExploreScreen` (explorar el catálogo)
  * — misma UI, dos consumidores distintos.
  *
- * `title` distingue una sección de otra; `T` es String para period/movement/museum, Int
- * para century. `label` es `@Composable` (no una función plana) para que pueda llamar
- * `stringResource` adentro — ver [formatCentury].
+ * `title` distingue una sección de otra. `label` es `@Composable` (no una función plana)
+ * para que futuros usos puedan llamar `stringResource` adentro si hace falta.
  */
 @Composable
 fun <T> FilterSection(
@@ -42,7 +40,3 @@ fun <T> FilterSection(
         }
     }
 }
-
-@Composable
-fun formatCentury(century: Int): String =
-    if (century > 0) stringResource(R.string.century_ce, century) else stringResource(R.string.century_bce, -century)

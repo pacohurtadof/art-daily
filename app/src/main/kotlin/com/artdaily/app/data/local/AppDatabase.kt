@@ -16,9 +16,11 @@ import androidx.room.RoomDatabase
         WidgetConfigEntity::class
     ],
     // v2 (2026-08-19): se agregaron `creditLine`/`descriptionAttribution` a `artworks`
-    // (ver ArtworkSqliteWriter.kt / ArtworkEntity.kt) — sin migración escrita a propósito,
-    // ver `fallbackToDestructiveMigration` en DatabaseModule.
-    version = 2
+    // (ver ArtworkSqliteWriter.kt / ArtworkEntity.kt).
+    // v3 (2026-08-19): `widget_config` cambió `museum`/`century` por `yearFrom`/`yearTo`
+    // (ver ArtworkFilter.kt / WidgetConfigEntity.kt). Sin migración escrita a propósito en
+    // ninguno de los dos casos, ver `fallbackToDestructiveMigration` en DatabaseModule.
+    version = 3
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artworkDao(): ArtworkDao

@@ -1,5 +1,61 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Filtro por rango de años reemplaza a Museo/Siglo
+
+Pedido del usuario: quitar las secciones de Museo y Siglo del filtro (Explorar y
+configuración de widget, mismo componente compartido — se confirmó que aplica a los
+dos), y en su lugar un selector de rango donde se puedan establecer años directamente.
+También se confirmó: el filtro de museo se elimina del todo (no solo se oculta) — sin
+campos muertos en el motor de filtros.
+
+**Modelo (core-model):**
+- `ArtworkFilter`: se sacaron `century`/`museum`, se agregaron `yearFrom`/`yearTo`
+  (comparan contra `creationYearStart`, igual que hacía `century`).
+- `AvailableFilterOptions`: se sacaron `museums`/`centuries`, se agregaron `minYear`/
+  `maxYear` (bordes reales del catálogo, para los extremos del slider).
+
+**App:**
+- `ArtworkDao`: `getFiltered`/`countFiltered` cambiaron el filtro de igualdad por
+  siglo/museo por un rango (`creationYearStart >= :yearFrom AND <= :yearTo`, con el
+  mismo patrón `:param IS NULL OR ...` de siempre). Nuevas `getMinYear()`/
+  `getMaxYear()`, se sacaron `getDistinctMuseums()`/`getDistinctCenturies()`.
+- `WidgetConfigEntity`: mismo cambio de esquema que `ArtworkFilter` — **Room subió a
+  `version = 3`** (v2 fue hoy mismo, por `creditLine`). Sin migración a propósito,
+  `fallbackToDestructiveMigration` ya cubre esto.
+- `YearRangeSelector` nuevo (`ui/common/`) — `RangeSlider` de Material3, compartido
+  entre `ExploreScreen` y `ArtWidgetConfigActivity` (mismo criterio que
+  `FilterSection`). Arrastre en vivo actualiza la posición visual en cada frame, pero
+  solo dispara la búsqueda/conteo al soltar (`onValueChangeFinished`), no en cada
+  píxel. `formatCentury` (ya no se usa) se eliminó de `FilterSection.kt`.
+- `ExploreViewModel`/`ArtWidgetConfigViewModel`: `selectedMuseum`/`selectedCentury` →
+  `yearFrom`/`yearTo`, inicializados a los bordes reales (`available.minYear/maxYear`)
+  al cargar — equivale a "sin filtrar" hasta que el usuario arrastra.
+- `harvester/storage/ArtworkSqliteWriter.kt`: mismo cambio de esquema en la tabla
+  `widget_config` que crea. **No hizo falta re-cosechar las 2001 obras** — la tabla
+  `widget_config` siempre está vacía en el `artworks.db` empaquetado (se llena en el
+  dispositivo), así que se recreó directo por sqlite3 (`DROP TABLE` + `CREATE TABLE`)
+  sin tocar la tabla `artworks`, mucho más rápido que un harvest completo.
+
+**Tests:** `FakeArtworkRepository` (test double) actualizado al nuevo filtro por año;
+`SelectionEngineTest` — el test que usaba `museum` para probar "el filtro se aplica
+antes que el historial" pasó a usar `period` (sigue existiendo), más un test nuevo de
+regresión específico para el rango de años (incluye un caso con `creationYearStart =
+null`, que no debe colarse solo por no tener dato).
+
+**Verificado en vivo en el emulador** (reinstall completo, esquema de Room cambió):
+Museo desapareció de la UI, Siglo fue reemplazado por "Years" con los bordes reales del
+catálogo ("3050 BCE" – "1980"). Nota de proceso: los primeros intentos de arrastrar el
+slider vía `adb shell input swipe` terminaban navegando "atrás" en la app en vez de
+mover el thumb — el thumb en su posición default (extremo izquierdo) cae dentro de la
+zona de gestos de "volver atrás" del sistema Android (edge swipe), y `adb input swipe`
+no respeta la exclusión de gestos que sí protege a un toque real de usuario. Iniciando
+el arrastre un poco más adentro del track (no exactamente en el borde) el slider
+respondió bien: el label se actualizó en vivo (3050 BCE → 622 BCE → 1393), y se
+confirmó por fuera de la app (consulta sqlite directa a la base del dispositivo) que el
+rango [1393, 1980] efectivamente excluye ~185 de las 2001 obras (1816 coinciden) —
+la reducción del grid no se notó a simple vista porque las obras top-ranked mostradas
+ya caían dentro de ese rango, pero el conteo real confirma que el filtro sí actúa.
+
 ## 2026-08-19 (continuación) — Repo en GitHub + publicación real de artworks.db/delta.json
 
 Último pendiente explícito que quedaba del diseño original (CLAUDE.md, punto 13): la

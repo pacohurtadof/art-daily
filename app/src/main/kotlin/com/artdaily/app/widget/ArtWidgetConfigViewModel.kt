@@ -17,24 +17,26 @@ import javax.inject.Inject
 
 /**
  * No incluye filtro por artista todavía — necesitaría un buscador (podrían ser cientos de
- * artistas distintos), no un chip seleccionable como period/movement/museum/century.
- * Queda marcado como pendiente explícito, no un olvido.
+ * artistas distintos), no un chip seleccionable como period/movement. Museo se sacó de la
+ * UI y siglo se reemplazó por un rango de años (`yearFrom`/`yearTo`, 2026-08-19).
  */
 data class ConfigUiState(
     val isLoading: Boolean = true,
     val available: AvailableFilterOptions = AvailableFilterOptions(),
     val selectedPeriod: String? = null,
     val selectedMovement: String? = null,
-    val selectedMuseum: String? = null,
-    val selectedCentury: Int? = null,
+    // null hasta que `available` carga — a partir de ahí, por defecto son los bordes
+    // reales del catálogo (equivale a "no filtrar"), el usuario los achica arrastrando.
+    val yearFrom: Int? = null,
+    val yearTo: Int? = null,
     val matchingCount: Int = 0
 ) {
     val filter: ArtworkFilter
         get() = ArtworkFilter(
             period = selectedPeriod,
-            century = selectedCentury,
             movement = selectedMovement,
-            museum = selectedMuseum
+            yearFrom = yearFrom,
+            yearTo = yearTo
         )
 }
 
@@ -50,15 +52,22 @@ class ArtWidgetConfigViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val available = artworkRepository.getAvailableFilterOptions()
-            _uiState.update { it.copy(available = available, isLoading = false) }
+            _uiState.update {
+                it.copy(
+                    available = available,
+                    isLoading = false,
+                    yearFrom = available.minYear,
+                    yearTo = available.maxYear
+                )
+            }
             recomputeMatchCount()
         }
     }
 
     fun selectPeriod(value: String?) = updateSelection { copy(selectedPeriod = toggled(selectedPeriod, value)) }
     fun selectMovement(value: String?) = updateSelection { copy(selectedMovement = toggled(selectedMovement, value)) }
-    fun selectMuseum(value: String?) = updateSelection { copy(selectedMuseum = toggled(selectedMuseum, value)) }
-    fun selectCentury(value: Int?) = updateSelection { copy(selectedCentury = toggledInt(selectedCentury, value)) }
+
+    fun selectYearRange(from: Int, to: Int) = updateSelection { copy(yearFrom = from, yearTo = to) }
 
     /** Guarda la config para este widget. `avoidRepeatDays` se deja en el default (30). */
     suspend fun saveConfig(widgetId: Int) {
@@ -67,10 +76,10 @@ class ArtWidgetConfigViewModel @Inject constructor(
             WidgetConfigEntity(
                 widgetId = widgetId,
                 period = state.selectedPeriod,
-                century = state.selectedCentury,
                 movement = state.selectedMovement,
                 artistName = null, // sin UI de filtro por artista todavía
-                museum = state.selectedMuseum
+                yearFrom = state.yearFrom,
+                yearTo = state.yearTo
             )
         )
     }
@@ -89,5 +98,4 @@ class ArtWidgetConfigViewModel @Inject constructor(
 
     /** Tocar el chip ya seleccionado lo deselecciona (vuelve a "Cualquiera"). */
     private fun toggled(current: String?, value: String?): String? = if (current == value) null else value
-    private fun toggledInt(current: Int?, value: Int?): Int? = if (current == value) null else value
 }

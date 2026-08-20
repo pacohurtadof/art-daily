@@ -19,16 +19,18 @@ data class ExploreUiState(
     val available: AvailableFilterOptions = AvailableFilterOptions(),
     val selectedPeriod: String? = null,
     val selectedMovement: String? = null,
-    val selectedMuseum: String? = null,
-    val selectedCentury: Int? = null,
+    // null hasta que `available` carga — a partir de ahí, por defecto son los bordes
+    // reales del catálogo (equivale a "no filtrar"), el usuario los achica arrastrando.
+    val yearFrom: Int? = null,
+    val yearTo: Int? = null,
     val results: List<Artwork> = emptyList()
 ) {
     val filter: ArtworkFilter
         get() = ArtworkFilter(
             period = selectedPeriod,
-            century = selectedCentury,
             movement = selectedMovement,
-            museum = selectedMuseum
+            yearFrom = yearFrom,
+            yearTo = yearTo
         )
 }
 
@@ -49,15 +51,16 @@ class ExploreViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val available = artworkRepository.getAvailableFilterOptions()
-            _uiState.update { it.copy(available = available) }
+            _uiState.update {
+                it.copy(available = available, yearFrom = available.minYear, yearTo = available.maxYear)
+            }
             search()
         }
     }
 
     fun selectPeriod(value: String?) = updateSelection { copy(selectedPeriod = toggled(selectedPeriod, value)) }
     fun selectMovement(value: String?) = updateSelection { copy(selectedMovement = toggled(selectedMovement, value)) }
-    fun selectMuseum(value: String?) = updateSelection { copy(selectedMuseum = toggled(selectedMuseum, value)) }
-    fun selectCentury(value: Int?) = updateSelection { copy(selectedCentury = toggledInt(selectedCentury, value)) }
+    fun selectYearRange(from: Int, to: Int) = updateSelection { copy(yearFrom = from, yearTo = to) }
 
     private fun updateSelection(block: ExploreUiState.() -> ExploreUiState) {
         _uiState.update(block)
@@ -74,7 +77,6 @@ class ExploreViewModel @Inject constructor(
     }
 
     private fun toggled(current: String?, value: String?): String? = if (current == value) null else value
-    private fun toggledInt(current: Int?, value: Int?): Int? = if (current == value) null else value
 
     private companion object {
         const val MAX_RESULTS = 200
