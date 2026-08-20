@@ -9,3 +9,6 @@ harvester/output/
 
 # Claude Code — settings/locks locales de esta máquina, no del proyecto.
 .claude/
+
+# Contexto del proyecto para Claude Code — no se versiona a propósito.
+CLAUDE.md
