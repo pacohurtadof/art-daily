@@ -4,4 +4,9 @@
          margen de la imagen fuente (docs/assets/app_icon_source.png), para que se vea
          continuo con la capa de arte en vez de un recuadro de otro color detrás. -->
     <color name="ic_launcher_background">#FCFCFC</color>
+
+    <!-- Mismo beige que el fondo de la paleta Compose (ui/theme/Color.kt) — evita un
+         flash blanco en el `windowBackground` nativo antes de que Compose termine de
+         componer el primer frame. -->
+    <color name="window_background">#F5EEE1</color>
 </resources>

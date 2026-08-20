@@ -31,6 +31,7 @@ import androidx.lifecycle.lifecycleScope
 import com.artdaily.app.R
 import com.artdaily.app.ui.common.FilterSection
 import com.artdaily.app.ui.common.YearRangeSelector
+import com.artdaily.app.ui.theme.ArtDailyTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -63,7 +64,7 @@ class ArtWidgetConfigActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme {
+            ArtDailyTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     ConfigScreen(viewModel = viewModel, onConfirm = ::confirmAndFinish)
                 }

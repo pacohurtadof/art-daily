@@ -1,5 +1,33 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Paleta de colores: beige + naranja en vez de blanco/morado
+
+Pedido del usuario. Antes de tocar nada se confirmó (grep) que ningún componente tenía
+colores hardcodeados — todo usaba `MaterialTheme.colorScheme.*` por default (el morado
+venía del esquema base de Material3, sin overridear) — así que un solo cambio
+centralizado cascadea a toda la app sin tocar cada pantalla.
+
+**Trabajo:**
+- `ui/theme/Color.kt` + `ui/theme/Theme.kt` nuevos — antes no existían, `MainActivity`/
+  `ArtWidgetConfigActivity` usaban `MaterialTheme { ... }` liso (el esquema de color
+  baseline de M3, morado). `ArtDailyTheme` nuevo los reemplaza en los dos lugares.
+- Paleta: naranja quemado (`#C2662B`) como `primary`, marrón cálido como `secondary`,
+  beige (`#F5EEE1`) como `background`/`surface`.
+- **Encontrado al verificar en vivo**: con solo `primary`/`background`/`surface`
+  overrideados, la barra de tabs de abajo seguía lavanda — Material3 usa roles
+  "surface container" (`surfaceContainer`, `surfaceContainerHigh`, etc., el sistema de
+  tokens tonal de M3 para `NavigationBar`/`TopAppBar`/cards elevadas) que si no se
+  especifican también, caen al tono morado por defecto aunque `surface` ya esté en
+  beige. Se completó la paleta con esos roles (`surfaceDim`, `surfaceBright`,
+  `surfaceContainer*`, `inverseSurface`, `inversePrimary`, `surfaceTint`) — recién ahí
+  desapareció el lavanda del todo.
+- `res/values/colors.xml` + `themes.xml`: `windowBackground` nativo también a beige
+  (evita un flash blanco antes de que Compose renderice el primer frame).
+
+Verificado en vivo en Hoy/Ajustes/Explorar: botones, toggle, chips, slider de años,
+tab seleccionado — todo naranja/beige consistente, sin rastro de morado en ningún
+lado.
+
 ## 2026-08-19 (continuación) — Ícono de launcher propio
 
 El usuario compartió una imagen (puente/estanque estilo Monet con una "A" superpuesta,

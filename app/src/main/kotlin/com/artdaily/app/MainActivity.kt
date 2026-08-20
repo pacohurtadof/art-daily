@@ -16,7 +16,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -47,6 +46,7 @@ import com.artdaily.app.ui.home.HomeScreen
 import com.artdaily.app.ui.home.HomeViewModel
 import com.artdaily.app.ui.settings.SettingsScreen
 import com.artdaily.app.ui.settings.SettingsViewModel
+import com.artdaily.app.ui.theme.ArtDailyTheme
 import com.artdaily.app.widget.ArtWidget
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
         val pendingArtworkId = intent?.getStringExtra(ArtWidget.ARTWORK_ID_PARAM.name)
 
         setContent {
-            MaterialTheme {
+            ArtDailyTheme {
                 ArtDailyApp(homeViewModel = homeViewModel, pendingArtworkId = pendingArtworkId)
             }
         }
