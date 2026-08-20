@@ -1,5 +1,48 @@
 # Bitácora — ArtDaily
 
+## 2026-08-19 (continuación) — Diccionario de movimientos ampliado
+
+Pregunta del usuario: "¿por qué tenemos tan pocos movimientos?" (Explorar mostraba
+solo 4 chips: Cubismo, Impresionismo, Postimpresionismo, Realismo). Investigado con
+datos reales, no supuesto:
+
+- Solo **87 de 2001 obras** (4.3%) tenían movimiento asignado.
+- Causa raíz: **solo AIC** tiene un campo real de movimiento (`style_title`/
+  `style_titles`) — Met usa un fallback débil contra period/culture con el mismo
+  diccionario chico, y **CMA/Rijksmuseum nunca lo llenan** (sin campo limpio
+  equivalente, así desde el diseño original). El diccionario de `MovementNormalizer`
+  (core-model) es chico a propósito — 14 movimientos, solo arte occidental
+  ~1850-1950 — y si no matchea exacto, `null` en vez de adivinar.
+- Consulta real a la API de AIC (curl, 100 obras de muestra) mostró movimientos
+  reales presentes en los datos que el diccionario no reconocía: **Mannerism,
+  Modernism, Neoclassicism, Romanticism**. (Baroque/Renaissance/Gothic también
+  aparecían, pero se dejaron afuera a propósito — esos ya son `period`, agregarlos a
+  `movement` duplicaría la clasificación.)
+- Se le preguntó al usuario si ampliar el diccionario con esos 4 — confirmó que sí.
+
+**Cambios:** `MovementNormalizer.kt` — 4 entradas nuevas (Manierismo/Modernismo/
+Neoclasicismo/Romanticismo) + tests de regresión (incluida una prueba explícita de que
+Baroque/Renaissance/Gothic siguen sin matchear). **Hizo falta re-cosechar** (a
+diferencia del cambio de esquema de `widget_config` de antes) — el harvester ya había
+procesado y descartado como `null` estas obras, agregar el diccionario solo no las
+reclasifica retroactivamente. Re-corrida completa (`bulk 2000`): 2002 obras.
+
+**Resultado real, con expectativas realistas** (no se "arregló" del todo, el techo
+sigue bajo): 95/2002 con movimiento ahora (antes 87/2001), 5 movimientos distintos
+en pantalla (antes 4) — Modernismo (5) y Neoclasicismo (5) aparecieron nuevos y
+visibles en Explorar, verificado en vivo. Manierismo/Romanticismo no aparecieron en
+esta corrida particular (el muestreo del harvester no garantiza tocar cada obra que
+los tenga), pero la clasificación ya está lista para cuando aparezcan. La limitación
+estructural de fondo (solo AIC tiene datos reales, y ahí solo una fracción de las
+obras trae un `style_title` que sea realmente un movimiento) sigue — ampliar el
+diccionario ayuda, pero no cambia que 3 de las 4 fuentes nunca van a tener movimiento.
+
+**Publicación:** `artworks.db` regenerado y copiado a `assets/`, reinstall completo
+del emulador para verificar, release de GitHub `data-20260819` reemplazado (mismo
+tag del día — se borró el anterior con `gh release delete --cleanup-tag` y se
+republicó) para que el sync también tome esta reclasificación sin esperar un
+reinstall.
+
 ## 2026-08-19 (continuación) — Filtro por rango de años reemplaza a Museo/Siglo
 
 Pedido del usuario: quitar las secciones de Museo y Siglo del filtro (Explorar y

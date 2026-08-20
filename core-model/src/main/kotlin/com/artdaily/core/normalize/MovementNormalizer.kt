@@ -24,7 +24,15 @@ object MovementNormalizer {
         "abstract expressionism" to "Expresionismo abstracto",
         "abstract art" to "Arte abstracto",
         "pop art" to "Pop art",
-        "minimalism" to "Minimalismo"
+        "minimalism" to "Minimalismo",
+        // Agregados el 2026-08-19: encontrados en vivo en `style_title`/`style_titles`
+        // reales de AIC (curl contra la API, no una suposición) — Baroque/Renaissance/
+        // Gothic quedan afuera a propósito, esos ya se clasifican como `period`, no
+        // `movement` (ver PeriodNormalizer); agregarlos acá los duplicaría.
+        "mannerism" to "Manierismo",
+        "modernism" to "Modernismo",
+        "neoclassicism" to "Neoclasicismo",
+        "romanticism" to "Romanticismo"
         // se amplía con cada fuente nueva que se incorpore
     )
 
