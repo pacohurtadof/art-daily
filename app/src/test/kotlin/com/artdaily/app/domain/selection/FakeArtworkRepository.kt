@@ -10,11 +10,14 @@ class FakeArtworkRepository(private val artworks: List<Artwork>) : ArtworkReposi
 
     override suspend fun getFiltered(filter: ArtworkFilter, minRankScore: Float): List<Artwork> =
         artworks.filter { a ->
+            val year = a.creationYearStart
+            val yearFrom = filter.yearFrom
+            val yearTo = filter.yearTo
             (filter.period == null || a.period == filter.period) &&
-                (filter.century == null || a.century == filter.century) &&
                 (filter.movement == null || a.movement == filter.movement) &&
                 (filter.artistName == null || a.artistName == filter.artistName) &&
-                (filter.museum == null || a.museum == filter.museum) &&
+                (yearFrom == null || (year != null && year >= yearFrom)) &&
+                (yearTo == null || (year != null && year <= yearTo)) &&
                 a.rankScore >= minRankScore
         }
 
@@ -26,7 +29,7 @@ class FakeArtworkRepository(private val artworks: List<Artwork>) : ArtworkReposi
     override suspend fun getAvailableFilterOptions(): AvailableFilterOptions = AvailableFilterOptions(
         periods = artworks.mapNotNull { it.period }.distinct(),
         movements = artworks.mapNotNull { it.movement }.distinct(),
-        museums = artworks.map { it.museum }.distinct(),
-        centuries = artworks.mapNotNull { it.century }.distinct()
+        minYear = artworks.mapNotNull { it.creationYearStart }.minOrNull(),
+        maxYear = artworks.mapNotNull { it.creationYearStart }.maxOrNull()
     )
 }

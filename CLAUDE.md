@@ -159,7 +159,13 @@ art-daily/
     dentro de la app, no solo del harvester) que `DailyArtworkWorker` llama en cada
     corrida para bajar el `delta.json` del último release y hacerle `upsertAll` a Room.
     Verificado en vivo end-to-end. Detalle completo en `docs/bitacora.md`.
-14. Pendiente, ninguno bloqueante (orden sugerido, no un compromiso):
+14. ✅ **Filtro por rango de años reemplaza a Museo/Siglo** (2026-08-19, pedido del
+    usuario): `ArtworkFilter`/`AvailableFilterOptions` cambiaron `museum`/`century` por
+    `yearFrom`/`yearTo`; `YearRangeSelector` nuevo (`RangeSlider` de Material3),
+    compartido entre Explorar y la config de un widget. Filtro de museo eliminado del
+    todo (no solo oculto). Room subió a v3. Verificado en vivo. Detalle en
+    `docs/bitacora.md`.
+15. Pendiente, ninguno bloqueante (orden sugerido, no un compromiso):
     - Pantalla de **historial** — `HistoryDao` existe y se usa para el anti-repetición,
       pero no hay UI que lo muestre (el README original habla de "favoritos e
       historial").

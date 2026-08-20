@@ -117,12 +117,32 @@ class SelectionEngineTest {
     @Test
     fun `filter is applied before considering history`() = runBlocking {
         val repo = FakeArtworkRepository(
-            listOf(artwork("a").copy(museum = "Met"), artwork("b").copy(museum = "AIC"))
+            listOf(artwork("a").copy(museum = "Met"), artwork("b").copy(period = "Barroco"))
         )
         val engine = SelectionEngine(repo, FakeHistoryDao())
         val result = engine.pickForWidget(
-            widgetId = 1, filter = ArtworkFilter(museum = "AIC"), avoidRepeatDays = 30
+            widgetId = 1, filter = ArtworkFilter(period = "Barroco"), avoidRepeatDays = 30
         )
         assertEquals("b", result?.id)
+    }
+
+    @Test
+    fun `year range filter only matches artworks with a known year inside the range`() = runBlocking {
+        // Reemplazó al filtro de siglo/museo el 2026-08-19 — "b" queda afuera por año, "c"
+        // queda afuera por no tener año conocido (no debe colarse solo porque no hay dato).
+        val repo = FakeArtworkRepository(
+            listOf(
+                artwork("a").copy(creationYearStart = 1650),
+                artwork("b").copy(creationYearStart = 1200),
+                artwork("c").copy(creationYearStart = null)
+            )
+        )
+        val engine = SelectionEngine(repo, FakeHistoryDao())
+        val result = engine.pickForWidget(
+            widgetId = 1,
+            filter = ArtworkFilter(yearFrom = 1600, yearTo = 1700),
+            avoidRepeatDays = 30
+        )
+        assertEquals("a", result?.id)
     }
 }

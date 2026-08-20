@@ -15,10 +15,10 @@ class ArtworkRepositoryImpl @Inject constructor(
     override suspend fun getFiltered(filter: ArtworkFilter, minRankScore: Float): List<Artwork> =
         artworkDao.getFiltered(
             period = filter.period,
-            century = filter.century,
             movement = filter.movement,
             artistName = filter.artistName,
-            museum = filter.museum,
+            yearFrom = filter.yearFrom,
+            yearTo = filter.yearTo,
             minRankScore = minRankScore
         ).map { it.toArtwork() }
 
@@ -27,17 +27,17 @@ class ArtworkRepositoryImpl @Inject constructor(
     override suspend fun countFiltered(filter: ArtworkFilter, minRankScore: Float): Int =
         artworkDao.countFiltered(
             period = filter.period,
-            century = filter.century,
             movement = filter.movement,
             artistName = filter.artistName,
-            museum = filter.museum,
+            yearFrom = filter.yearFrom,
+            yearTo = filter.yearTo,
             minRankScore = minRankScore
         )
 
     override suspend fun getAvailableFilterOptions(): AvailableFilterOptions = AvailableFilterOptions(
         periods = artworkDao.getDistinctPeriods(),
         movements = artworkDao.getDistinctMovements(),
-        museums = artworkDao.getDistinctMuseums(),
-        centuries = artworkDao.getDistinctCenturies()
+        minYear = artworkDao.getMinYear(),
+        maxYear = artworkDao.getMaxYear()
     )
 }

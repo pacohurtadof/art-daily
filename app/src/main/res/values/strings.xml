@@ -24,16 +24,15 @@
     <string name="label_period">Periodo</string>
     <string name="label_movement">Movimiento</string>
     <string name="label_museum">Museo</string>
-    <string name="label_century">Siglo</string>
-    <string name="century_ce">Siglo %1$d</string>
-    <string name="century_bce">Siglo %1$d a.C.</string>
+    <string name="label_years">Años</string>
+    <string name="year_bce">%1$d a.C.</string>
 
     <!-- Hoy -->
     <string name="home_no_artworks">Todavía no hay obras disponibles.</string>
     <string name="home_view_details">Ver detalles</string>
 
     <!-- Explorar -->
-    <string name="explore_subtitle">Filtra por periodo, movimiento, museo o siglo.</string>
+    <string name="explore_subtitle">Filtra por periodo, movimiento o años.</string>
     <string name="explore_empty_results">Ninguna obra coincide con este filtro.</string>
 
     <!-- Favoritos -->

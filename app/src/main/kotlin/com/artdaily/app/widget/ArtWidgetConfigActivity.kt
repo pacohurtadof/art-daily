@@ -30,15 +30,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.artdaily.app.R
 import com.artdaily.app.ui.common.FilterSection
-import com.artdaily.app.ui.common.formatCentury
+import com.artdaily.app.ui.common.YearRangeSelector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
  * Pantalla que Android abre automáticamente al agregar el widget (`ACTION_APPWIDGET_CONFIGURE`).
  *
- * Alcance actual: filtro por periodo/movimiento/museo/siglo (chips, valores realmente
- * presentes en la base). Sin filtro por artista todavía — necesita un buscador, no un chip;
+ * Alcance actual: filtro por periodo/movimiento (chips, valores realmente presentes en la
+ * base) + rango de años. Sin filtro por artista todavía — necesita un buscador, no un chip;
  * ver nota en `ArtWidgetConfigViewModel`.
  */
 @AndroidEntryPoint
@@ -121,19 +121,12 @@ private fun ConfigScreen(viewModel: ArtWidgetConfigViewModel, onConfirm: () -> U
             label = { it },
             onSelect = viewModel::selectMovement
         )
-        FilterSection(
-            title = stringResource(R.string.label_museum),
-            options = state.available.museums,
-            selected = state.selectedMuseum,
-            label = { it },
-            onSelect = viewModel::selectMuseum
-        )
-        FilterSection(
-            title = stringResource(R.string.label_century),
-            options = state.available.centuries,
-            selected = state.selectedCentury,
-            label = { formatCentury(it) },
-            onSelect = viewModel::selectCentury
+        YearRangeSelector(
+            minYear = state.available.minYear,
+            maxYear = state.available.maxYear,
+            selectedFrom = state.yearFrom,
+            selectedTo = state.yearTo,
+            onRangeSelected = viewModel::selectYearRange
         )
 
         Text(

@@ -38,10 +38,10 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
         val config = widgetConfigDao.getById(widgetId)
         val filter = ArtworkFilter(
             period = config?.period,
-            century = config?.century,
             movement = config?.movement,
             artistName = config?.artistName,
-            museum = config?.museum
+            yearFrom = config?.yearFrom,
+            yearTo = config?.yearTo
         )
         val avoidRepeatDays = config?.avoidRepeatDays ?: 30
 
