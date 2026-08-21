@@ -8,6 +8,7 @@ import com.artdaily.app.data.local.FavoriteEntity
 import com.artdaily.app.data.translation.TranslationResult
 import com.artdaily.app.data.translation.TranslationService
 import com.artdaily.app.wallpaper.WallpaperApplier
+import com.artdaily.app.wallpaper.WallpaperResult
 import com.artdaily.app.wallpaper.WallpaperTarget
 import com.artdaily.core.model.Artwork
 import com.artdaily.core.repository.ArtworkRepository
@@ -19,8 +20,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import javax.inject.Inject
-
-enum class WallpaperResult { SUCCESS, ERROR }
 
 /** Por qué tocar "Traducir" no produjo una traducción nueva — un enum en vez del texto
  * ya armado, porque el ViewModel no es contexto `@Composable` y no puede llamar

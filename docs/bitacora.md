@@ -1,5 +1,40 @@
 # Bitácora — ArtDaily
 
+## 2026-08-20 — Primera prueba en dispositivo real (Pixel 10) + 2 bugs reales de wallpaper
+
+Primera vez que se prueba en un teléfono físico (hasta ahora todo era emulador). Costó
+conectarlo: `adb devices` no veía el Pixel 10 pese al cable estar bien (sí cargaba y
+mostraba notificación USB) — la causa real era que el modo de conexión USB del
+teléfono estaba en "Solo carga" en vez de "Transferencia de archivos"; una vez
+cambiado, apareció enseguida. Quedó verificado también que esto no era un problema del
+entorno de Claude Code (se le pidió al usuario correr `adb devices` en su propia
+terminal real con `!`, y daba el mismo resultado — descartó la hipótesis inicial de
+que el entorno de comandos no tuviera acceso al USB físico).
+
+**Bug real #1 — activar "cambiar fondo automáticamente" no hacía nada visible**:
+el toggle en Ajustes solo guarda una preferencia; el cambio real corre dentro de
+`DailyArtworkWorker`, ya programado una vez al abrir la app
+(`ExistingPeriodicWorkPolicy.KEEP`) con su propio ciclo de ~24h — activar el toggle
+no lo vuelve a disparar. El usuario podía estar esperando hasta 24h para el primer
+cambio. Fix: `SettingsViewModel.setAutoChangeEnabled(true)` ahora aplica el fondo YA
+MISMO (mismo `WallpaperApplier` que usa el worker y el botón manual de Detalle), con
+feedback visible (ícono de carga + toast) — mismo criterio que ya usaba
+`DailyArtworkWorker.enqueueOneTime()` para no esperar 24h al agregar un widget nuevo.
+`WallpaperResult` (antes solo en `DetailViewModel`) se movió a `wallpaper/` para
+compartirlo entre las dos pantallas.
+
+**Decisión revertida — el selector de destino vuelve a Ajustes**: se había sacado el
+2026-08-19 por parecer redundante con el diálogo manual de Detalle (que pregunta lo
+mismo cada vez). Al probarlo en el dispositivo real, el usuario notó el problema real:
+el cambio AUTOMÁTICO no tiene ningún diálogo — corre solo, sin UI — así que sin un
+lugar donde guardarlo, no hay forma de configurarlo para ese caso. Se restauró
+`WallpaperPreferences.target`, con el subtítulo reescrito para dejar claro que es
+*solo* para el automático (el manual de Detalle sigue preguntando cada vez,
+independiente de esto). Cambiar el destino mientras el automático ya está activo
+también re-aplica al toque, mismo criterio que activar el toggle.
+
+Verificado en el emulador y reinstalado en el Pixel 10 real.
+
 ## 2026-08-19 (continuación) — Paleta de colores: beige + naranja en vez de blanco/morado
 
 Pedido del usuario. Antes de tocar nada se confirmó (grep) que ningún componente tenía

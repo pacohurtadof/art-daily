@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.artdaily.app.R
+import com.artdaily.app.wallpaper.WallpaperResult
 import com.artdaily.app.wallpaper.WallpaperTarget
 import com.artdaily.core.model.Artwork
 
