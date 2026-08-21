@@ -36,4 +36,17 @@ interface FavoriteDao {
         """
     )
     fun observeAll(): Flow<List<ArtworkEntity>>
+
+    /** Mismo query que [observeAll], pero de una sola vez — usado por la rotación de
+     * favoritos como fondo de pantalla automático (`GetNextFavoriteWallpaperUseCase`,
+     * 2026-08-21), que necesita leer la lista una vez por corrida del worker, no
+     * observarla en vivo. */
+    @Query(
+        """
+        SELECT artworks.* FROM artworks
+        INNER JOIN favorites ON artworks.id = favorites.artworkId
+        ORDER BY favorites.savedAt DESC
+        """
+    )
+    suspend fun getAllOnce(): List<ArtworkEntity>
 }

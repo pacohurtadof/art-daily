@@ -13,8 +13,10 @@ class FakeArtworkRepository(private val artworks: List<Artwork>) : ArtworkReposi
             val year = a.creationYearStart
             val yearFrom = filter.yearFrom
             val yearTo = filter.yearTo
-            (filter.period == null || a.period == filter.period) &&
-                (filter.movement == null || a.movement == filter.movement) &&
+            val periods = filter.periods
+            val movements = filter.movements
+            (periods == null || a.period in periods) &&
+                (movements == null || a.movement in movements) &&
                 (filter.artistName == null || a.artistName == filter.artistName) &&
                 (yearFrom == null || (year != null && year >= yearFrom)) &&
                 (yearTo == null || (year != null && year <= yearTo)) &&

@@ -56,9 +56,16 @@
 
     <!-- Ajustes -->
     <string name="settings_auto_wallpaper_title">Change wallpaper automatically</string>
-    <string name="settings_auto_wallpaper_subtitle">Uses the artwork of the day, once a day, along with the widget update.</string>
+    <string name="settings_auto_wallpaper_subtitle">Once a day, along with the widget update — pick the source below.</string>
+    <string name="settings_wallpaper_source_title">Automatic wallpaper source</string>
+    <string name="settings_wallpaper_source_subtitle">Only for the automatic change above.</string>
+    <string name="settings_wallpaper_source_no_favorites_hint">You don\'t have any artworks in Favorites yet — there\'s nothing to rotate until you add at least one.</string>
     <string name="settings_wallpaper_target_title">Where to apply the automatic wallpaper</string>
     <string name="settings_wallpaper_target_subtitle">Only for the automatic change above — the manual button in Detail asks this same thing every time it\'s used.</string>
+
+    <!-- Fondo de pantalla: fuente (WallpaperSource) -->
+    <string name="wallpaper_source_daily">Artwork of the day</string>
+    <string name="wallpaper_source_favorites">Rotate through my favorites</string>
 
     <!-- Fondo de pantalla: destino (WallpaperTarget) -->
     <string name="wallpaper_target_home">Home screen only</string>

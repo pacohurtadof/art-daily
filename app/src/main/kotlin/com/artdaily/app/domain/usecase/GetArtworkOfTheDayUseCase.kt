@@ -36,9 +36,12 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
         }
 
         val config = widgetConfigDao.getById(widgetId)
+        // `WidgetConfigEntity.period`/`movement` siguen siendo un solo valor (single-select,
+        // sin cambios) — se envuelven en una lista de 0 o 1 elemento para `ArtworkFilter`,
+        // que ahora pide listas por la multi-selección de Explorar (2026-08-21).
         val filter = ArtworkFilter(
-            period = config?.period,
-            movement = config?.movement,
+            periods = config?.period?.let { listOf(it) },
+            movements = config?.movement?.let { listOf(it) },
             artistName = config?.artistName,
             yearFrom = config?.yearFrom,
             yearTo = config?.yearTo

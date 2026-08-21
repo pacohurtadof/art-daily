@@ -121,9 +121,26 @@ class SelectionEngineTest {
         )
         val engine = SelectionEngine(repo, FakeHistoryDao())
         val result = engine.pickForWidget(
-            widgetId = 1, filter = ArtworkFilter(period = "Barroco"), avoidRepeatDays = 30
+            widgetId = 1, filter = ArtworkFilter(periods = listOf("Barroco")), avoidRepeatDays = 30
         )
         assertEquals("b", result?.id)
+    }
+
+    @Test
+    fun `multiple selected periods match artworks in any of them`() = runBlocking {
+        // Multi-selección en Explorar (2026-08-21): elegir dos periodos a la vez debe traer
+        // obras de cualquiera de los dos, no solo del primero.
+        val repo = FakeArtworkRepository(
+            listOf(
+                artwork("a").copy(period = "Barroco"),
+                artwork("b").copy(period = "Renacimiento"),
+                artwork("c").copy(period = "Moderno")
+            )
+        )
+        val result = repo.getFiltered(
+            ArtworkFilter(periods = listOf("Barroco", "Renacimiento")), minRankScore = 0f
+        )
+        assertEquals(setOf("a", "b"), result.map { it.id }.toSet())
     }
 
     @Test

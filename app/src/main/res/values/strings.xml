@@ -62,9 +62,16 @@
 
     <!-- Ajustes -->
     <string name="settings_auto_wallpaper_title">Cambiar fondo de pantalla automáticamente</string>
-    <string name="settings_auto_wallpaper_subtitle">Usa la obra del día, una vez al día, junto con la actualización del widget.</string>
+    <string name="settings_auto_wallpaper_subtitle">Una vez al día, junto con la actualización del widget — elegí la fuente abajo.</string>
+    <string name="settings_wallpaper_source_title">Fuente del fondo automático</string>
+    <string name="settings_wallpaper_source_subtitle">Solo para el cambio automático de arriba.</string>
+    <string name="settings_wallpaper_source_no_favorites_hint">Todavía no tenés obras en Favoritos — no hay nada para rotar hasta que agregues al menos una.</string>
     <string name="settings_wallpaper_target_title">Dónde aplicar el fondo automático</string>
     <string name="settings_wallpaper_target_subtitle">Solo para el cambio automático de arriba — el botón manual de Detalle pregunta esto mismo cada vez que se usa.</string>
+
+    <!-- Fondo de pantalla: fuente (WallpaperSource) -->
+    <string name="wallpaper_source_daily">Obra del día</string>
+    <string name="wallpaper_source_favorites">Rotar entre mis favoritos</string>
 
     <!-- Fondo de pantalla: destino (WallpaperTarget) -->
     <string name="wallpaper_target_home">Solo pantalla de inicio</string>

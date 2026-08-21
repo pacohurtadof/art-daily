@@ -26,12 +26,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.artdaily.app.R
 import com.artdaily.app.wallpaper.WallpaperResult
+import com.artdaily.app.wallpaper.WallpaperSource
 import com.artdaily.app.wallpaper.WallpaperTarget
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val autoChangeEnabled by viewModel.autoChangeEnabled.collectAsState()
     val target by viewModel.target.collectAsState()
+    val source by viewModel.source.collectAsState()
+    val favoritesCount by viewModel.favoritesCount.collectAsState()
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
@@ -71,6 +74,39 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 checked = autoChangeEnabled,
                 onCheckedChange = viewModel::setAutoChangeEnabled,
                 enabled = !state.isApplyingWallpaper
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp))
+
+        // Fuente del cambio automático (2026-08-21, pedido del usuario: rotar entre
+        // Favoritos en vez de repetir siempre la obra del día).
+        Text(
+            stringResource(R.string.settings_wallpaper_source_title),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            stringResource(R.string.settings_wallpaper_source_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
+        )
+        WallpaperSource.entries.forEach { option ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(selected = source == option, onClick = { viewModel.setSource(option) }),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = source == option, onClick = { viewModel.setSource(option) })
+                Text(stringResource(option.labelRes), modifier = Modifier.padding(start = 4.dp))
+            }
+        }
+        if (source == WallpaperSource.FAVORITES_ROTATION && favoritesCount == 0) {
+            Text(
+                stringResource(R.string.settings_wallpaper_source_no_favorites_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 

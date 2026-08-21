@@ -1,5 +1,95 @@
 # Bitácora — ArtDaily
 
+## 2026-08-21 — Multi-selección en Explorar, filtro de solo pinturas, rotación de fondo por Favoritos
+
+Tres pedidos del usuario en la misma sesión:
+
+**1. Multi-selección de Period/Movement en Explorar** ("¿podemos seleccionar varias
+opciones en el filtro? como impresionismo y expresionismo"). Confirmado con el usuario:
+multi-select en Period y Movement, solo en Explorar — la config de un widget nuevo se
+queda single-select como estaba. `ArtworkFilter.period`/`movement` (`String?`) pasaron a
+`periods`/`movements` (`List<String>?`); `FilterSection` (compartido con
+`ArtWidgetConfigActivity`) pasó de `selected: T?` a `selected: Set<T>` — el widget adapta
+envolviendo su único valor en un set de 0-o-1 elemento, sin tocar
+`ArtWidgetConfigViewModel`.
+
+**Bug real encontrado probando en el emulador**: seleccionar 2+ movimientos a la vez
+crasheaba la app ("ArtDaily keeps stopping"). Causa: el patrón Room
+`:param IS NULL OR columna IN (:param)` que funciona con un valor escalar se rompe con
+una lista — Room expande `:movements` a tantos `?` como elementos tenga en TODAS sus
+apariciones del SQL, así que con 2 elementos `:movements IS NULL` se volvía literalmente
+`?,? IS NULL` (comparación de tupla), que SQLite rechaza con "row value misused". Fix:
+un booleano aparte (`hasPeriods`/`hasMovements`) decide si se filtra, en vez de comparar
+la lista contra NULL.
+
+Esto no lo detectan los tests unitarios (`FakeArtworkRepository` no ejecuta SQL real) —
+solo se vio probando en vivo. Se agregó `AppDatabaseSmokeTest
+.filteringByTwoOrMoreMovementsDoesNotThrow`, un test instrumentado (Room/SQLite real) de
+regresión. De paso se encontró que ese archivo ya estaba roto desde el refactor de rango
+de años (referenciaba parámetros `century`/`museum` eliminados) sin que nadie lo notara,
+porque los tests instrumentados no corren en `./gradlew test` — se actualizó a la firma
+actual.
+
+**2. Filtro de solo pinturas** ("¿podemos limitar las imágenes a pinturas? veo muchas
+fotos de esculturas"). El campo `classification` ya existía normalizado
+(`ClassificationNormalizer`) y ya estaba en la base — no hizo falta recosechar nada.
+Decisión: regla fija (no un filtro que el usuario elige), `classification IN
+('painting', 'print')` agregado directo al `WHERE` de `ArtworkDao.getFiltered`/
+`countFiltered` — cubre Hoy, Explorar y el widget de una sola vez. Favoritos no se toca
+(lee por id directo).
+
+**3. Rotación de fondo de pantalla por Favoritos** ("debería haber una función en
+configuración para que el fondo de pantalla rote entre las obras que tengo en
+favoritos"). `WallpaperPreferences` suma `source: WallpaperSource`
+(`DAILY_ARTWORK`/`FAVORITES_ROTATION`) — el destino (inicio/bloqueo/ambas) sigue
+aplicando a cualquiera de las dos. Rotación secuencial (no aleatoria) sobre el orden de
+`FavoriteDao` (más reciente guardado primero); si la última obra aplicada ya no está en
+Favoritos, arranca de nuevo desde el principio. El cálculo del ciclo
+(`FavoriteRotation.next`) se separó a `core-model` (Kotlin puro) específicamente para
+poder testearlo en JVM sin Robolectric — `GetNextFavoriteWallpaperUseCase` solo conecta
+`FavoriteDao`/`WallpaperPreferences` (con dependencias de Android) con esa función pura.
+Nueva sección "Fuente del fondo automático" en Ajustes, con aviso si se elige rotar sin
+tener favoritos guardados.
+
+Verificado en vivo de punta a punta en el emulador y en el Pixel 10 real: multi-selección
+sin crash, Explorar/Hoy/widget sin esculturas, y el fondo de pantalla de inicio cambiando
+a la obra favorita exacta al activar la rotación. Unit tests + instrumentados en verde
+(incluye 6 tests nuevos de `FavoriteRotation` y el de regresión del bug de Room).
+
+De paso: correr `./gradlew :app:connectedDebugAndroidTest` desinstala la app del
+dispositivo al terminar (comportamiento normal de AGP, no un bug) — explica por qué el
+usuario reportó "no la veo en mi celular" en un momento sin que nadie la hubiera
+desinstalado a mano. Hay que reinstalar con `:app:installDebug` después si se va a seguir
+usando la app.
+
+## 2026-08-20 (continuación) — Rango del selector de años: 740–año actual, no 3050 a.C.–1980
+
+Feedback del usuario al usar el selector en el Pixel 10 real: "¿desde qué año tenemos
+pinturas? no veo el punto en ir hasta años a.C. si no hay pinturas ahí, y el selector
+se vuelve complicado; preferiría que llegara hasta el año actual".
+
+Se investigó con datos reales antes de tocar nada:
+- **Pinturas**: `MIN(creationYearStart) WHERE classification='painting'` = 740, 813
+  obras, hasta 1929.
+- Todo lo anterior al año 1000 en el catálogo entero (~114 obras de ~2000) es casi
+  todo `other`/escultura/cerámica/joyería — 2 pinturas nada más. El rango completo
+  (hasta ~3050 a.C.) volvía el slider difícil de manejar por un puñado de obras que
+  no son pintura.
+
+Se le preguntó al usuario dónde fijar el piso — eligió **740** (el año real de la
+pintura más antigua), sabiendo que deja las ~114 obras muy antiguas fuera del alcance
+de ESTE filtro específico (siguen viéndose en Favoritos/Hoy si ya están ahí).
+
+**Cambio:** `AvailableFilterOptions.minYear`/`maxYear` dejaron de venir de
+`MIN`/`MAX(creationYearStart)` reales de la base (se sacaron esas queries de
+`ArtworkDao`, quedaban sin uso) — `ArtworkRepositoryImpl` ahora fija el piso en
+**740** (constante, con nota de por qué) y el techo en `java.time.Year.now().value`
+(el año actual de verdad, no la obra más nueva cosechada — así el selector no queda
+pisado en 1980 para siempre por casualidad de qué se cosechó).
+
+Verificado en vivo: el selector ahora muestra "740" – "2026". Reinstalado en el
+Pixel 10.
+
 ## 2026-08-20 — Primera prueba en dispositivo real (Pixel 10) + 2 bugs reales de wallpaper
 
 Primera vez que se prueba en un teléfono físico (hasta ahora todo era emulador). Costó

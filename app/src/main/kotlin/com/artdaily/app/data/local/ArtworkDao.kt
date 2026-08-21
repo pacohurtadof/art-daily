@@ -22,21 +22,41 @@ interface ArtworkDao {
      * `yearFrom`/`yearTo` reemplazaron a `museum`/`century` el 2026-08-19 — un rango de años
      * en vez de un chip de siglo entero; comparan contra `creationYearStart` solamente (igual
      * que el `century` que reemplazan, que también se derivaba solo de ese campo).
+     *
+     * `periods`/`movements` pasaron de un solo valor a listas el 2026-08-21 (multi-selección
+     * en Explorar). El patrón `:param IS NULL OR columna IN (:param)` que funciona para un
+     * valor escalar NO sirve acá: Room expande una lista a tantos placeholders como elementos
+     * tenga en TODAS sus apariciones del SQL, así que con 2+ elementos seleccionados
+     * `:movements IS NULL` termina siendo literalmente `?,? IS NULL` — una comparación de
+     * tupla que SQLite rechaza ("row value misused"). Bug real, encontrado en vivo probando
+     * en un emulador al tocar dos chips de movimiento a la vez (crasheaba la app). Por eso acá
+     * se usa un booleano aparte (`hasPeriods`/`hasMovements`) para decidir si se filtra,
+     * en vez de comparar la lista misma contra NULL — la lista siempre llega no-nula (vacía
+     * cuando no se filtra).
+     *
+     * `classification IN ('painting', 'print')` es una regla fija (2026-08-21, pedido del
+     * usuario: "veo muchas fotos de esculturas") — no un filtro que el usuario elige, por eso
+     * no es un parámetro. Excluye esculturas/cerámica/joyería/etc. de Hoy, Explorar y el
+     * widget. Favoritos no pasa por acá (lee por id directo vía `getById`), así que una obra
+     * no-pintura ya guardada de antes sigue viéndose ahí.
      */
     @Query(
         """
         SELECT * FROM artworks
-        WHERE (:period IS NULL OR period = :period)
-        AND (:movement IS NULL OR movement = :movement)
+        WHERE (:hasPeriods = 0 OR period IN (:periods))
+        AND (:hasMovements = 0 OR movement IN (:movements))
         AND (:artistName IS NULL OR artistName = :artistName)
         AND (:yearFrom IS NULL OR creationYearStart >= :yearFrom)
         AND (:yearTo IS NULL OR creationYearStart <= :yearTo)
+        AND classification IN ('painting', 'print')
         AND rankScore >= :minRankScore
         """
     )
     suspend fun getFiltered(
-        period: String?,
-        movement: String?,
+        hasPeriods: Boolean,
+        periods: List<String>,
+        hasMovements: Boolean,
+        movements: List<String>,
         artistName: String?,
         yearFrom: Int?,
         yearTo: Int?,
@@ -48,17 +68,20 @@ interface ArtworkDao {
     @Query(
         """
         SELECT COUNT(*) FROM artworks
-        WHERE (:period IS NULL OR period = :period)
-        AND (:movement IS NULL OR movement = :movement)
+        WHERE (:hasPeriods = 0 OR period IN (:periods))
+        AND (:hasMovements = 0 OR movement IN (:movements))
         AND (:artistName IS NULL OR artistName = :artistName)
         AND (:yearFrom IS NULL OR creationYearStart >= :yearFrom)
         AND (:yearTo IS NULL OR creationYearStart <= :yearTo)
+        AND classification IN ('painting', 'print')
         AND rankScore >= :minRankScore
         """
     )
     suspend fun countFiltered(
-        period: String?,
-        movement: String?,
+        hasPeriods: Boolean,
+        periods: List<String>,
+        hasMovements: Boolean,
+        movements: List<String>,
         artistName: String?,
         yearFrom: Int?,
         yearTo: Int?,
@@ -70,14 +93,6 @@ interface ArtworkDao {
 
     @Query("SELECT DISTINCT movement FROM artworks WHERE movement IS NOT NULL ORDER BY movement")
     suspend fun getDistinctMovements(): List<String>
-
-    /** Bordes reales del selector de rango de años — `null` si ninguna obra tiene
-     * `creationYearStart` conocido. */
-    @Query("SELECT MIN(creationYearStart) FROM artworks WHERE creationYearStart IS NOT NULL")
-    suspend fun getMinYear(): Int?
-
-    @Query("SELECT MAX(creationYearStart) FROM artworks WHERE creationYearStart IS NOT NULL")
-    suspend fun getMaxYear(): Int?
 
     /** Usado por el sync del delta.json (`INSERT OR REPLACE` por id, igual que el harvester). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

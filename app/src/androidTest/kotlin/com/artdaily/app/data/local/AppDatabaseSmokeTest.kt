@@ -44,10 +44,45 @@ class AppDatabaseSmokeTest {
     @Test
     fun canReadASpecificArtworkWithAllItsFields() = runBlocking {
         val any = db.artworkDao().getFiltered(
-            period = null, century = null, movement = null,
-            artistName = null, museum = null, minRankScore = 0f
+            hasPeriods = false, periods = emptyList(),
+            hasMovements = false, movements = emptyList(),
+            artistName = null, yearFrom = null, yearTo = null, minRankScore = 0f
         ).firstOrNull()
         assertTrue("Se esperaba poder leer al menos una obra completa", any != null)
         assertTrue("isPublicDomain debería ser siempre true (filtro del mapper)", any?.isPublicDomain == true)
+    }
+
+    /**
+     * Regresión del crash real encontrado en vivo el 2026-08-21 al seleccionar dos chips de
+     * movimiento a la vez en Explorar: `(:hasMovements = 0 OR movement IN (:movements))` con
+     * una lista de 2+ elementos generaba `SQLiteException: row value misused`. Esto NO lo
+     * detecta `SelectionEngineTest`/`FakeArtworkRepository` (JVM, sin SQL real) — solo un test
+     * instrumentado contra Room/SQLite real lo agarra, que es justo lo que pasó: el bug llegó
+     * a probarse en vivo en el emulador antes de notarse. Usa dos movimientos reales del
+     * catálogo empaquetado en vez de valores inventados, para no depender de qué movimientos
+     * existan hoy.
+     */
+    @Test
+    fun filteringByTwoOrMoreMovementsDoesNotThrow() = runBlocking {
+        val movements = db.artworkDao().getDistinctMovements()
+        if (movements.size < 2) return@runBlocking // catálogo de prueba sin suficiente variedad
+
+        val selected = movements.take(2)
+        val result = db.artworkDao().getFiltered(
+            hasPeriods = false, periods = emptyList(),
+            hasMovements = true, movements = selected,
+            artistName = null, yearFrom = null, yearTo = null, minRankScore = 0f
+        )
+        assertTrue(
+            "Todo resultado debería tener uno de los movimientos seleccionados",
+            result.all { it.movement in selected }
+        )
+
+        val count = db.artworkDao().countFiltered(
+            hasPeriods = false, periods = emptyList(),
+            hasMovements = true, movements = selected,
+            artistName = null, yearFrom = null, yearTo = null, minRankScore = 0f
+        )
+        assertTrue("countFiltered debería coincidir con el tamaño de getFiltered", count == result.size)
     }
 }

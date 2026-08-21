@@ -15,7 +15,9 @@ import androidx.work.WorkerParameters
 import com.artdaily.app.data.settings.WallpaperPreferences
 import com.artdaily.app.data.sync.ArtworkSyncService
 import com.artdaily.app.domain.usecase.GetArtworkOfTheDayUseCase
+import com.artdaily.app.domain.usecase.GetNextFavoriteWallpaperUseCase
 import com.artdaily.app.wallpaper.WallpaperApplier
+import com.artdaily.app.wallpaper.WallpaperSource
 import com.artdaily.app.widget.ArtWidget
 import com.artdaily.app.widget.WidgetImageDownloader
 import com.artdaily.app.widget.toWidgetState
@@ -46,6 +48,7 @@ class DailyArtworkWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val getArtworkOfTheDay: GetArtworkOfTheDayUseCase,
+    private val getNextFavoriteWallpaper: GetNextFavoriteWallpaperUseCase,
     private val wallpaperPreferences: WallpaperPreferences,
     private val wallpaperApplier: WallpaperApplier,
     private val artworkSyncService: ArtworkSyncService
@@ -71,12 +74,16 @@ class DailyArtworkWorker @AssistedInject constructor(
         }
 
         if (wallpaperPreferences.autoChangeEnabled.value) {
-            // widgetId=0 = "obra del día" de la app principal, no de un widget — mismo
-            // convenio que usa HomeViewModel. No depende de que haya widgets colocados.
-            // Destino elegido en Ajustes (WallpaperPreferences.target) — a diferencia del
-            // diálogo manual de Detalle, acá no hay a quién preguntarle, el worker corre
-            // solo sin UI, por eso sí hace falta guardar la preferencia.
-            val artwork = getArtworkOfTheDay(widgetId = 0)
+            // Fuente elegida en Ajustes (WallpaperPreferences.source, 2026-08-21): la obra
+            // del día (widgetId=0, mismo convenio que usa HomeViewModel, no depende de que
+            // haya widgets colocados) o la próxima en la rotación de Favoritos. Destino
+            // (home/lock/ambas) también viene de Ajustes — a diferencia del diálogo manual
+            // de Detalle, acá no hay a quién preguntarle, el worker corre solo sin UI, por
+            // eso sí hace falta guardar ambas preferencias.
+            val artwork = when (wallpaperPreferences.source.value) {
+                WallpaperSource.DAILY_ARTWORK -> getArtworkOfTheDay(widgetId = 0)
+                WallpaperSource.FAVORITES_ROTATION -> getNextFavoriteWallpaper()
+            }
             val imageUrl = artwork?.imageUrlFull ?: artwork?.imageUrlThumbnail
             wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)
         }

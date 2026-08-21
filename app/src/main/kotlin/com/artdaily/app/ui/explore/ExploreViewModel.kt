@@ -17,8 +17,10 @@ import javax.inject.Inject
 data class ExploreUiState(
     val isLoading: Boolean = true,
     val available: AvailableFilterOptions = AvailableFilterOptions(),
-    val selectedPeriod: String? = null,
-    val selectedMovement: String? = null,
+    // Sets, no un solo valor — multi-selección real (2026-08-21): se puede ver
+    // Impresionismo y Expresionismo a la vez. Vacío = "no filtrar por esto".
+    val selectedPeriods: Set<String> = emptySet(),
+    val selectedMovements: Set<String> = emptySet(),
     // null hasta que `available` carga — a partir de ahí, por defecto son los bordes
     // reales del catálogo (equivale a "no filtrar"), el usuario los achica arrastrando.
     val yearFrom: Int? = null,
@@ -27,8 +29,8 @@ data class ExploreUiState(
 ) {
     val filter: ArtworkFilter
         get() = ArtworkFilter(
-            period = selectedPeriod,
-            movement = selectedMovement,
+            periods = selectedPeriods.takeIf { it.isNotEmpty() }?.toList(),
+            movements = selectedMovements.takeIf { it.isNotEmpty() }?.toList(),
             yearFrom = yearFrom,
             yearTo = yearTo
         )
@@ -58,8 +60,8 @@ class ExploreViewModel @Inject constructor(
         }
     }
 
-    fun selectPeriod(value: String?) = updateSelection { copy(selectedPeriod = toggled(selectedPeriod, value)) }
-    fun selectMovement(value: String?) = updateSelection { copy(selectedMovement = toggled(selectedMovement, value)) }
+    fun selectPeriod(value: String) = updateSelection { copy(selectedPeriods = toggled(selectedPeriods, value)) }
+    fun selectMovement(value: String) = updateSelection { copy(selectedMovements = toggled(selectedMovements, value)) }
     fun selectYearRange(from: Int, to: Int) = updateSelection { copy(yearFrom = from, yearTo = to) }
 
     private fun updateSelection(block: ExploreUiState.() -> ExploreUiState) {
@@ -76,7 +78,9 @@ class ExploreViewModel @Inject constructor(
         }
     }
 
-    private fun toggled(current: String?, value: String?): String? = if (current == value) null else value
+    /** Toca un chip: lo agrega al set si no estaba, lo saca si ya estaba. */
+    private fun toggled(current: Set<String>, value: String): Set<String> =
+        if (value in current) current - value else current + value
 
     private companion object {
         const val MAX_RESULTS = 200

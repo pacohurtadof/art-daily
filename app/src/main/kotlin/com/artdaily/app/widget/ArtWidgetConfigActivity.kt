@@ -111,16 +111,18 @@ private fun ConfigScreen(viewModel: ArtWidgetConfigViewModel, onConfirm: () -> U
         FilterSection(
             title = stringResource(R.string.label_period),
             options = state.available.periods,
-            selected = state.selectedPeriod,
+            // FilterSection es compartido con Explorar (multi-select) — acá se sigue viendo
+            // y comportando como single-select envolviendo el único valor en un set de 0 o 1.
+            selected = setOfNotNull(state.selectedPeriod),
             label = { it },
-            onSelect = viewModel::selectPeriod
+            onToggle = viewModel::selectPeriod
         )
         FilterSection(
             title = stringResource(R.string.label_movement),
             options = state.available.movements,
-            selected = state.selectedMovement,
+            selected = setOfNotNull(state.selectedMovement),
             label = { it },
-            onSelect = viewModel::selectMovement
+            onToggle = viewModel::selectMovement
         )
         YearRangeSelector(
             minYear = state.available.minYear,

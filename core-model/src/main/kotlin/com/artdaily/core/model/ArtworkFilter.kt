@@ -10,8 +10,12 @@ package com.artdaily.core.model
  * `docs/bitacora.md`). Coinciden si `yearFrom <= creationYearStart <= yearTo`.
  */
 data class ArtworkFilter(
-    val period: String? = null,
-    val movement: String? = null,
+    // Listas en vez de un solo valor — Explorar permite elegir varios periodos/movimientos
+    // a la vez (ej. Impresionismo + Expresionismo juntos), no solo uno (2026-08-21). La
+    // config de widget sigue siendo single-select en su UI, pero arma una lista de 0 o 1
+    // elemento para reusar este mismo filtro.
+    val periods: List<String>? = null,
+    val movements: List<String>? = null,
     val artistName: String? = null,
     val yearFrom: Int? = null,
     val yearTo: Int? = null

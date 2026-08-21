@@ -31,10 +31,15 @@ data class ConfigUiState(
     val yearTo: Int? = null,
     val matchingCount: Int = 0
 ) {
+    // La config de un widget sigue siendo single-select en su propia UI (decisión explícita
+    // del usuario, 2026-08-21: la multi-selección es solo para Explorar) — pero `ArtworkFilter`
+    // ahora pide listas, así que se envuelve el único valor elegido en una lista de 0 o 1
+    // elemento. `FilterSection` (compartido con Explorar) se adapta del mismo modo en
+    // `ArtWidgetConfigActivity`, sin tocar el modelo de estado de este ViewModel.
     val filter: ArtworkFilter
         get() = ArtworkFilter(
-            period = selectedPeriod,
-            movement = selectedMovement,
+            periods = selectedPeriod?.let { listOf(it) },
+            movements = selectedMovement?.let { listOf(it) },
             yearFrom = yearFrom,
             yearTo = yearTo
         )

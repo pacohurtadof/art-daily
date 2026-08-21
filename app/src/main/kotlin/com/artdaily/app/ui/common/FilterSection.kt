@@ -15,6 +15,12 @@ import androidx.compose.ui.unit.dp
  * `ArtWidgetConfigActivity` (filtro de un widget) y `ExploreScreen` (explorar el catálogo)
  * — misma UI, dos consumidores distintos.
  *
+ * `selected` es un `Set<T>` (no un solo valor) desde el 2026-08-21 — Explorar permite elegir
+ * varios chips a la vez (ej. Impresionismo + Expresionismo). `onToggle` solo avisa qué chip
+ * se tocó; quién llama decide si eso agrega/saca del set (Explorar, multi-selección) o
+ * reemplaza el valor (config de widget, sigue siendo single-select armando un set de 0 o 1
+ * elemento en el call site — ver `ArtWidgetConfigActivity`).
+ *
  * `title` distingue una sección de otra. `label` es `@Composable` (no una función plana)
  * para que futuros usos puedan llamar `stringResource` adentro si hace falta.
  */
@@ -22,9 +28,9 @@ import androidx.compose.ui.unit.dp
 fun <T> FilterSection(
     title: String,
     options: List<T>,
-    selected: T?,
+    selected: Set<T>,
     label: @Composable (T) -> String,
-    onSelect: (T?) -> Unit
+    onToggle: (T) -> Unit
 ) {
     if (options.isEmpty()) return
 
@@ -32,8 +38,8 @@ fun <T> FilterSection(
     FlowRow(modifier = Modifier.padding(bottom = 12.dp)) {
         options.forEach { option ->
             FilterChip(
-                selected = selected == option,
-                onClick = { onSelect(option) },
+                selected = option in selected,
+                onClick = { onToggle(option) },
                 label = { Text(label(option)) },
                 modifier = Modifier.padding(end = 6.dp, bottom = 6.dp)
             )
