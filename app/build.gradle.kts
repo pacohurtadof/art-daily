@@ -1,9 +1,22 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Firma de release (2026-08-21, para publicar en Play Store). `keystore.properties`
+// tiene las contraseñas reales y NO se versiona (está en .gitignore) — este archivo solo
+// lee de ahí. Sin ese archivo (ej. clonando el repo en otra máquina sin el keystore),
+// releaseSigningConfig queda sin configurar y `assembleRelease`/`bundleRelease` fallan
+// con un error claro en vez de silenciosamente firmar con nada.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -23,10 +36,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -105,4 +130,17 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+
+    // --- Tests de Compose UI (2026-08-21) — el equivalente a Selenium/Playwright para
+    // esta app: tocan botones/chips reales sobre la app real corriendo en un
+    // emulador/dispositivo, no solo Room o lógica en fakes. ---
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // Forzada explícita — ver el comentario en libs.versions.toml sobre por qué la
+    // transitiva (3.5.0) falla en este dispositivo de prueba.
+    androidTestImplementation(libs.androidx.espresso.core)
+    // Necesario para que createAndroidComposeRule pueda lanzar una Activity de prueba
+    // (agrega un ComponentActivity de test al manifest instrumentado) — solo en debug,
+    // no viaja en el APK de release.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

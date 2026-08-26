@@ -1,5 +1,119 @@
 # Bitácora — ArtDaily
 
+## 2026-08-25 — Tres bugs reales, ícono nuevo, y expansión del catálogo
+
+### Tres bugs reportados por el usuario
+
+1. **El fondo de pantalla automático no cambiaba a medianoche.**
+   `DailyArtworkWorker.schedulePeriodic` armaba un `PeriodicWorkRequest` de 24h sin
+   `setInitialDelay` — la primera corrida (y por lo tanto todas las siguientes, cada ~24h
+   desde ahí) quedaba anclada a la hora en la que se llamó por primera vez (ej. la hora en
+   que se abrió la app la primera vez), nunca a medianoche. Fix: `setInitialDelay` calculado
+   hasta la próxima medianoche local (`millisUntilNextLocalMidnight`, `internal` y con `now`
+   inyectable para poder testearlo sin depender del reloj real). Se renombró el trabajo único
+   (`daily_artwork_worker_v2`, cancelando el nombre viejo) para forzar que los dispositivos ya
+   instalados recojan el nuevo horario en vez de seguir con el anclaje viejo.
+2. **La imagen del widget a veces no aparecía.** `WidgetImageDownloader.downloadToFile`
+   tragaba cualquier excepción de red en silencio y el worker igual reportaba
+   `Result.success()` — un hipo de red dejaba el widget sin imagen hasta la corrida
+   siguiente (~24h después), sin reintento. Fix: si había una imagen que descargar y la
+   descarga falló, el worker devuelve `Result.retry()` en vez de `Result.success()`.
+3. **El widget mostraba una obra distinta a la de "Hoy".** Cada widget (aunque no tuviera
+   filtro propio configurado) tenía su propia fila de historial por `widgetId`, así que
+   hacía su propio sorteo aleatorio independiente del de "Hoy" (`widgetId=0`), aunque el
+   pool de candidatas fuera idéntico. Fix: un widget SIN filtro propio ahora comparte la
+   misma clave de historial que "Hoy" (`GetArtworkOfTheDayUseCase`, `HOME_HISTORY_KEY`) —
+   literalmente la misma obra, no solo "una obra parecida". Un widget CON filtro propio
+   sigue con su historial independiente (su pool puede ser distinto). El fondo automático
+   con fuente "obra del día" usa la misma llamada (`widgetId=0`) que "Hoy", así que queda
+   cubierto por construcción.
+
+**Tests nuevos**: `DailyArtworkWorkerSchedulingTest` (unitario, la cuenta de medianoche),
+2 tests nuevos en `GetArtworkOfTheDayUseCaseTest` (widget sin filtro = misma obra que Hoy;
+widget con filtro = historial independiente), y `DailyArtworkFlowTest` (instrumentado, Room
+real en memoria — no el `artworks.db` real del dispositivo, para no contaminar el historial
+real de quien corra los tests) probando el cruce de día y la consistencia Hoy/widget de
+punta a punta contra SQL real, no fakes.
+
+### Ícono de launcher nuevo
+
+El usuario compartió una nueva imagen (foto de un lienzo con impasto beige/crema y una "A"
+naranja) para reemplazar el ícono anterior (estilo Monet, puente/estanque). Mismo proceso
+que la vez pasada: recorte al borde real del lienzo (excluyendo el telón de fondo gris del
+estudio y la sombra), fondo del ícono adaptativo muestreado de ese telón (`#E4E4E4`, antes
+`#FCFCFC`), arte insertado al 70% del lienzo de 108dp, set completo regenerado (adaptativo +
+legacy + `_round` con máscara circular real vía Pillow) en las 5 densidades. Fuente nueva en
+`docs/assets/app_icon_source.png` (reemplaza la anterior). Instalado y verificado en vivo.
+
+### Expansión del catálogo hacia ~10MB
+
+Pedido del usuario: subir la cantidad de obras sin que la app pase de 50MB. Antes de tocar
+el harvester, se midió el tamaño real de la app (no asumido): el APK universal de debug/
+release pesa 87/72MB, pero **no por las imágenes** (nunca se guardan en el `.db`, son URLs) —
+sino por `libtranslate_jni.so` de ML Kit, 11-17MB por arquitectura de CPU, empaquetado 4
+veces (arm64/armv7/x86/x86_64) = 64MB. Como Play Store reparte por ABI (`.aab`), lo que un
+usuario real baja es ~28-30MB (arm64) — dejando ~20MB reales de margen antes de los 50MB.
+Con ese dato, el usuario eligió apuntar a ~10MB/~10.000 obras (recomendado, sobre 20MB/20k)
+para dejar margen de sobra.
+
+Cambios en `:harvester` (`Main.kt`):
+- **Filtro de elegibilidad** (`isEligibleForCatalog`): de ahora en más solo se guarda
+  `classification IN ('painting','print')` y `creationYearStart == null || >= 740` — igual
+  que ya filtra la app (`ArtworkDao`/`ArtworkRepositoryImpl`), para no seguir guardando
+  peso muerto que nunca se muestra. Se podaron a mano, con el mismo criterio, las 871 obras
+  no-painting/print que ya estaban en `harvester/output/artworks.db` (quedó en 1031 obras,
+  975KB — confirma que casi la mitad de lo cosechado hasta ahora era peso muerto).
+- **`BULK_QUERY_TERMS`** ampliado de 30 a ~190 términos (más sujetos/escenas + apellidos de
+  pintores conocidos — nunca movimientos/periodos, esos los sigue derivando
+  `PeriodNormalizer`/`MovementNormalizer` de los campos propios de cada fuente).
+- **Bloqueo real encontrado en vivo**: la primera corrida (con `BATCH_SIZE` subido a 250)
+  disparó un bloqueo temporal del WAF de Met (Incapsula — no un 403 normal de la API, un
+  bot-mitigation con `incident_id`), cientos de fallos seguidos. Se cortó a mano y se
+  esperó; un `curl` de prueba a los pocos minutos ya respondía 200 normal, confirmando que
+  fue el volumen de la corrida, no un cambio permanente de la API. Fix: `BATCH_SIZE` bajado
+  a 150, delay por ítem subido de 150ms a 300ms, y un circuit breaker nuevo (corta la ronda
+  de esa fuente/término tras 5 fallos seguidos en vez de insistir contra un bloqueo activo).
+  También se envolvieron las 4 búsquedas iniciales en try/catch — antes un solo término
+  fallido podía tumbar toda la corrida de horas.
+- Cosecha (`bulk 10000`) relanzada en segundo plano con estos fixes — en curso al momento de
+  este commit, sin bloqueos. Falta, cuando termine: copiar el `artworks.db` resultante a
+  `app/src/main/assets/`, publicar el release en GitHub (`harvester/publish-release.sh`), y
+  verificar el tamaño final de la app instalada.
+
+## 2026-08-21 (continuación) — Primer build de release firmado, camino a Play Store
+
+El usuario ya creó la cuenta de Google Play Console. Primeros pasos técnicos:
+
+**Firma**: keystore de upload generado (`~/.android/art-daily-keystore/upload-keystore.jks`,
+RSA 2048, validez 10000 días, PKCS12 — por eso store/key password terminan siendo la
+misma, PKCS12 no soporta que sean distintas). Contraseñas + alias en
+`keystore.properties` en la raíz del repo, **gitignoreado** (igual que `*.jks`/
+`*.keystore`, por las dudas — el .jks real vive fuera del repo de todos modos, este es un
+repo público). `app/build.gradle.kts` lee ese archivo si existe y arma
+`signingConfigs.release`; sin el archivo, el build de release falla con un error claro en
+vez de firmar con nada silenciosamente.
+
+**Verificado de verdad, no solo compilado**: `bundleRelease` + `assembleRelease` compilan,
+pero eso NO garantiza que R8 no rompa algo en tiempo de ejecución — así que se instaló el
+`.apk` de release (firmado, minificado) en el emulador y se probó a mano:
+- Bug real encontrado: **ML Kit (traducción + detección de idioma) crasheaba** con
+  `NoSuchMethodException` en las clases `*Registrar` (`LanguageIdRegistrar`,
+  `NaturalLanguageTranslateRegistrar`, etc.) — ML Kit las descubre reflexivamente en
+  tiempo de ejecución vía nombres declarados en el manifest, y las reglas de ProGuard que
+  traen sus propios `.aar` (`com.google.mlkit:common/translate/language-id`) NO cubren
+  este caso (se verificó leyendo el `proguard.txt` real empaquetado en cada uno). Fix:
+  `-keep class com.google.mlkit.** { *; }` en `app/proguard-rules.pro`. Sin probar el
+  release de verdad, esto no se hubiera notado hasta que un usuario tocara "Traducir" en
+  producción.
+- Multi-selección en Explorar, filtro de pinturas, wallpaper (WorkManager+Hilt) y Room con
+  el fix de listas — todo probado en el release firmado, sin crashes.
+
+**Pendiente para publicar** (no bloqueante para seguir developando, orden sugerido):
+política de privacidad pública, formulario de "data safety" de Play Console, clasificación
+de contenido (el catálogo tiene desnudos artísticos — Met/AIC clásico), ficha de la tienda
+(capturas, feature graphic), y el requisito de Google de 20+ testers en testing cerrado
+durante 14 días para cuentas nuevas antes de habilitar producción.
+
 ## 2026-08-21 — Multi-selección en Explorar, filtro de solo pinturas, rotación de fondo por Favoritos
 
 Tres pedidos del usuario en la misma sesión:

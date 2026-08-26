@@ -23,6 +23,9 @@ import com.artdaily.app.widget.WidgetImageDownloader
 import com.artdaily.app.widget.toWidgetState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.time.Duration
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 /**
@@ -59,6 +62,7 @@ class DailyArtworkWorker @AssistedInject constructor(
 
         val glanceManager = GlanceAppWidgetManager(applicationContext)
         val glanceIds = glanceManager.getGlanceIds(ArtWidget::class.java)
+        var anyImageDownloadFailed = false
 
         glanceIds.forEach { glanceId ->
             val widgetId = glanceManager.getAppWidgetId(glanceId)
@@ -67,6 +71,13 @@ class DailyArtworkWorker @AssistedInject constructor(
             val imagePath = WidgetImageDownloader.downloadToFile(
                 applicationContext, widgetId, artwork.imageUrlThumbnail
             )
+            if (imagePath == null && !artwork.imageUrlThumbnail.isNullOrBlank()) {
+                // Había una imagen que descargar y falló (red inestable, servidor del museo
+                // lento/caído, etc.) — antes esto se tragaba en silencio y el widget quedaba
+                // sin imagen hasta la próxima corrida periódica (~24h después). Ahora se pide
+                // reintento de todo el worker (bug real reportado por el usuario, 2026-08-25).
+                anyImageDownloadFailed = true
+            }
 
             ArtWidget.updateState(
                 applicationContext, glanceId, artwork.toWidgetState().copy(imageFilePath = imagePath)
@@ -88,11 +99,19 @@ class DailyArtworkWorker @AssistedInject constructor(
             wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)
         }
 
-        return Result.success()
+        return if (anyImageDownloadFailed) Result.retry() else Result.success()
     }
 
     companion object {
-        private const val UNIQUE_PERIODIC_NAME = "daily_artwork_worker"
+        // v2 (2026-08-25): la corrida vieja quedaba anclada a la hora en que se agregó el
+        // primer widget/se abrió la app por primera vez (ej. "3pm todos los días"), nunca a
+        // medianoche — bug real reportado por el usuario ("el fondo no cambia a
+        // medianoche"). Se renombra el trabajo único para forzar que WorkManager lo vuelva a
+        // programar con el nuevo `setInitialDelay` alineado a medianoche, y se cancela el
+        // nombre viejo para no dejarlo corriendo huérfano en los dispositivos que ya lo
+        // tenían programado.
+        private const val UNIQUE_PERIODIC_NAME = "daily_artwork_worker_v2"
+        private const val LEGACY_UNIQUE_PERIODIC_NAME = "daily_artwork_worker"
         private const val UNIQUE_ONE_TIME_NAME = "daily_artwork_worker_one_time"
 
         // Antes no hacía falta — la única red que tocaba el worker era la descarga
@@ -103,14 +122,29 @@ class DailyArtworkWorker @AssistedInject constructor(
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        /** Se llama una vez, desde `ArtDailyApplication.onCreate()`. Idempotente (KEEP). */
+        /** Se llama una vez, desde `ArtDailyApplication.onCreate()`. Idempotente (KEEP): una
+         * vez que `UNIQUE_PERIODIC_NAME` queda programado alineado a medianoche, reinicios
+         * posteriores de la app no lo vuelven a tocar (si lo hicieran, cada reinicio
+         * reiniciaría la espera de ~24h y el trabajo casi nunca llegaría a correr). */
         fun schedulePeriodic(context: Context) {
+            val workManager = WorkManager.getInstance(context)
+            workManager.cancelUniqueWork(LEGACY_UNIQUE_PERIODIC_NAME)
+
             val request = PeriodicWorkRequestBuilder<DailyArtworkWorker>(24, TimeUnit.HOURS)
                 .setConstraints(NETWORK_CONSTRAINTS)
+                .setInitialDelay(millisUntilNextLocalMidnight(), TimeUnit.MILLISECONDS)
                 .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            workManager.enqueueUniquePeriodicWork(
                 UNIQUE_PERIODIC_NAME, ExistingPeriodicWorkPolicy.KEEP, request
             )
+        }
+
+        /** `internal`, no `private`, y con `now` inyectable — así `DailyArtworkWorkerSchedulingTest`
+         * (test unitario, JVM pura) puede probar esta cuenta para varias horas del día sin
+         * depender del reloj real ni de un emulador. */
+        internal fun millisUntilNextLocalMidnight(now: ZonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())): Long {
+            val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+            return Duration.between(now, nextMidnight).toMillis()
         }
 
         /** Se llama al agregar un widget nuevo, para no esperar ~24h a verlo con datos. */

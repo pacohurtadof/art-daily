@@ -26,7 +26,24 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
     private val artworkRepository: ArtworkRepository
 ) {
     suspend operator fun invoke(widgetId: Int = 0): Artwork? {
-        val alreadyChosenId = historyDao.getMostRecentSince(widgetId, startOfTodayEpochMillis())
+        val config = widgetConfigDao.getById(widgetId)
+
+        // Si este widget NO tiene ningún filtro propio configurado, comparte la misma "obra
+        // del día" que "Hoy" (widgetId 0) en vez de sortear la suya por separado. Antes cada
+        // widget tenía su propia fila de historial aunque el filtro fuera idéntico al de
+        // Hoy, así que hacía su propio sorteo aleatorio independiente — terminaba mostrando
+        // una obra distinta a la de la app aunque no hubiera ninguna razón de filtro para
+        // que difiriera (bug real reportado por el usuario, 2026-08-25). Un widget CON
+        // filtro propio sigue con su propia clave de historial: su pool de candidatas puede
+        // ser distinto al de Hoy, así que necesita su propio sorteo y su propio
+        // anti-repetición.
+        val hasCustomFilter = config != null && (
+            config.period != null || config.movement != null || config.artistName != null ||
+                config.yearFrom != null || config.yearTo != null
+            )
+        val historyKey = if (hasCustomFilter) widgetId else HOME_HISTORY_KEY
+
+        val alreadyChosenId = historyDao.getMostRecentSince(historyKey, startOfTodayEpochMillis())
         if (alreadyChosenId != null) {
             // Si la obra ya elegida hoy todavía existe en el catálogo, esa es "la obra del
             // día" — no se sortea una nueva aunque cambien los filtros del widget a mitad
@@ -35,7 +52,6 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
             artworkRepository.getById(alreadyChosenId)?.let { return it }
         }
 
-        val config = widgetConfigDao.getById(widgetId)
         // `WidgetConfigEntity.period`/`movement` siguen siendo un solo valor (single-select,
         // sin cambios) — se envuelven en una lista de 0 o 1 elemento para `ArtworkFilter`,
         // que ahora pide listas por la multi-selección de Explorar (2026-08-21).
@@ -48,12 +64,17 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
         )
         val avoidRepeatDays = config?.avoidRepeatDays ?: 30
 
-        val artwork = selectionEngine.pickForWidget(widgetId, filter, avoidRepeatDays) ?: return null
+        val artwork = selectionEngine.pickForWidget(historyKey, filter, avoidRepeatDays) ?: return null
 
         historyDao.record(
-            HistoryEntity(widgetId = widgetId, artworkId = artwork.id, shownAt = System.currentTimeMillis())
+            HistoryEntity(widgetId = historyKey, artworkId = artwork.id, shownAt = System.currentTimeMillis())
         )
         return artwork
+    }
+
+    private companion object {
+        /** Misma clave que usa "Hoy" (widgetId = 0) — ver comentario arriba. */
+        const val HOME_HISTORY_KEY = 0
     }
 
     /** Medianoche local de hoy, en millis — un día de calendario real (zona horaria del

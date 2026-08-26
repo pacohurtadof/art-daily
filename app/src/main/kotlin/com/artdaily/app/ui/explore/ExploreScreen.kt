@@ -68,11 +68,13 @@ private fun FilterHeader(state: ExploreUiState, viewModel: ExploreViewModel) {
         )
         FilterSection(
             title = stringResource(R.string.label_period), options = state.available.periods,
-            selected = state.selectedPeriods, label = { it }, onToggle = viewModel::selectPeriod
+            selected = state.selectedPeriods, label = { it }, onToggle = viewModel::selectPeriod,
+            testTag = "explore_period"
         )
         FilterSection(
             title = stringResource(R.string.label_movement), options = state.available.movements,
-            selected = state.selectedMovements, label = { it }, onToggle = viewModel::selectMovement
+            selected = state.selectedMovements, label = { it }, onToggle = viewModel::selectMovement,
+            testTag = "explore_movement"
         )
         YearRangeSelector(
             minYear = state.available.minYear,

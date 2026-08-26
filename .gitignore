@@ -12,3 +12,9 @@ harvester/output/
 
 # Contexto del proyecto para Claude Code — no se versiona a propósito.
 CLAUDE.md
+
+# Firma de release — NUNCA subir esto. El .jks real vive fuera del repo
+# (~/.android/art-daily-keystore/), pero se ignoran los patrones igual por las dudas.
+keystore.properties
+*.jks
+*.keystore
