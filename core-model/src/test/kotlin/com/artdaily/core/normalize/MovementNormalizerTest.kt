@@ -55,4 +55,40 @@ class MovementNormalizerTest {
         assertNull(MovementNormalizer.normalize("Renaissance"))
         assertNull(MovementNormalizer.normalize("Gothic (medieval)"))
     }
+
+    @Test
+    fun `matches movements added on 2026-08-26 while classifying movement work by work`() {
+        assertEquals("Simbolismo", MovementNormalizer.normalize("Symbolism"))
+        assertEquals("Ukiyo-e", MovementNormalizer.normalize("Ukiyo-e"))
+        assertEquals("Escuela del río Hudson", MovementNormalizer.normalize("Hudson River School"))
+        assertEquals("Luminismo", MovementNormalizer.normalize("Luminism"))
+        assertEquals("Tonalismo", MovementNormalizer.normalize("Tonalism"))
+        assertEquals("Escuela de Barbizon", MovementNormalizer.normalize("Barbizon"))
+        assertEquals("Prerrafaelismo", MovementNormalizer.normalize("Pre-Raphaelite"))
+        assertEquals("Nabis", MovementNormalizer.normalize("Nabis"))
+        assertEquals("Precisionismo", MovementNormalizer.normalize("Precisionism"))
+        assertEquals("Orientalismo", MovementNormalizer.normalize("Orientalism"))
+        assertEquals("Escuela Ashcan", MovementNormalizer.normalize("Ashcan School"))
+    }
+
+    @Test
+    fun `a longer more specific key wins over a shorter one it contains`() {
+        // Regresión del bug real encontrado el 2026-08-26 al ampliar el diccionario: antes,
+        // el primer match del mapa (por orden de inserción) ganaba, no el más específico —
+        // con "impressionism" y "post-impressionism" ambos definidos, un texto que no
+        // matchea exacto pero contiene "impressionism" como substring de una variante de
+        // "post-impressionism" debía resolver al más largo/específico, no al más corto.
+        assertEquals("Postimpresionismo", MovementNormalizer.normalize("Post-Impressionism style"))
+        assertEquals("Impresionismo", MovementNormalizer.normalize("French Impressionism style"))
+    }
+
+    @Test
+    fun `matches the adjective form 'romantic', not just 'romanticism'`() {
+        // Verificado en vivo contra la API real de AIC (2026-08-26): dos Delacroix traían
+        // `style_titles` con "romantic" a secas, nunca "romanticism" — sin este alias
+        // quedaban sin movimiento automático (`PeriodNormalizerTest` tiene la otra mitad de
+        // esta regresión: antes esto además producía un `period` incorrecto).
+        assertEquals("Romanticismo", MovementNormalizer.normalize("romantic"))
+        assertEquals("Romanticismo", MovementNormalizer.normalize("nineteenth century, 19th century, romantic"))
+    }
 }

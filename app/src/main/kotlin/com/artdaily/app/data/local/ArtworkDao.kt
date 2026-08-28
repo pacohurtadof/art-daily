@@ -39,6 +39,14 @@ interface ArtworkDao {
      * no es un parámetro. Excluye esculturas/cerámica/joyería/etc. de Hoy, Explorar y el
      * widget. Favoritos no pasa por acá (lee por id directo vía `getById`), así que una obra
      * no-pintura ya guardada de antes sigue viéndose ahí.
+     *
+     * `ORDER BY RANDOM()` (2026-08-26): sin esto, SQLite devuelve las filas en su orden físico
+     * (básicamente el orden en que se insertaron) — como el catálogo se fue armando en varias
+     * cosechas separadas, un `LIMIT` en Kotlin (`ExploreViewModel.MAX_RESULTS`) sobre una lista
+     * sin ordenar terminaba mostrando siempre el mismo bloque de obras de las primeras
+     * fuentes cosechadas, cero de las agregadas después — bug real reportado por el usuario
+     * ("sigo viendo muy pocos", con un catálogo de 10.000+ obras). `SelectionEngine` no se ve
+     * afectado por este orden: ya hace su propio `.randomOrNull()` sobre lo que devuelve acá.
      */
     @Query(
         """
@@ -50,6 +58,7 @@ interface ArtworkDao {
         AND (:yearTo IS NULL OR creationYearStart <= :yearTo)
         AND classification IN ('painting', 'print')
         AND rankScore >= :minRankScore
+        ORDER BY RANDOM()
         """
     )
     suspend fun getFiltered(

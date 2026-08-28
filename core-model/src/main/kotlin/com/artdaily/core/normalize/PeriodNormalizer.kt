@@ -24,8 +24,6 @@ object PeriodNormalizer {
         "baroque" to "Barroco",
         "dutch golden age" to "Barroco",
         "rococo" to "Rococó",
-        "neoclassicism" to "Neoclasicismo",
-        "romanticism" to "Romanticismo",
         "medieval" to "Medieval",
         "middle ages" to "Medieval",
         "gothic" to "Gótico",
@@ -43,12 +41,33 @@ object PeriodNormalizer {
         // se amplía con cada fuente nueva que se incorpore
     )
 
-    /** Prueba cada candidato en orden; devuelve el primer match, o null si ninguno matchea. */
+    /**
+     * Prueba cada candidato en orden; devuelve el primer match, o null si ninguno matchea.
+     *
+     * Dentro de cada candidato, si no hay match exacto, se busca por substring, pero
+     * respetando límites de PALABRA (`\b...\b`) — y entre varios matches, gana el más largo
+     * (más específico). Bug real encontrado el 2026-08-26, clasificando movimiento obra por
+     * obra: dos Delacroix con `style_titles = ["nineteenth century", "19th century",
+     * "romantic"]` (verificado en vivo contra la API real de AIC) quedaban con
+     * `period = "Antigua Roma"`, porque el "roman" de esta lista SÍ es substring de
+     * "roman**tic**" con un `.contains()` ingenuo, aunque son palabras distintas. Con límites
+     * de palabra, "roman" ya no matchea dentro de "romantic" — queda `null` (correcto:
+     * "romantic" no es un periodo/era en este diccionario, es pista de un *movimiento*,
+     * ver `MovementNormalizer.romantic`).
+     *
+     * De paso se sacaron `neoclassicism`/`romanticism` de este diccionario (estaban
+     * duplicados con `MovementNormalizer` — el comentario de la clase ya decía que periodo y
+     * movimiento no debían mezclarse, pero estos dos quedaron en ambos por descuido).
+     */
     fun normalize(vararg candidates: String?): String? {
         for (raw in candidates) {
             if (raw.isNullOrBlank()) continue
             val key = raw.trim().lowercase()
-            val match = map[key] ?: map.entries.firstOrNull { key.contains(it.key) }?.value
+            val match = map[key]
+                ?: map.entries
+                    .filter { Regex("\\b${Regex.escape(it.key)}\\b").containsMatchIn(key) }
+                    .maxByOrNull { it.key.length }
+                    ?.value
             if (match != null) return match
         }
         return null

@@ -123,7 +123,8 @@ fun main(args: Array<String>) = runBlocking {
     val query = args.getOrNull(0) ?: "landscape"
     val dbPath = args.getOrNull(1) ?: "output/artworks.db"
 
-    val allMapped = harvestMet(query) + harvestAic(query) + harvestCma(query) + harvestRijks(query)
+    val allMapped = (harvestMet(query) + harvestAic(query) + harvestCma(query) + harvestRijks(query))
+        .map { MovementOverrides.apply(it) }
     // El listado en consola muestra TODO lo mapeado (sirve para inspeccionar qué hay,
     // incluidas cosas que no vamos a guardar) — lo que se persiste en `saveAndReportDelta`
     // sí respeta el filtro de elegibilidad (ver `isEligibleForCatalog`), igual que el modo bulk.
@@ -165,7 +166,8 @@ private suspend fun runBulkHarvest(target: Int, dbPath: String) {
         }
 
         println("\n--- [${index + 1}/${BULK_QUERY_TERMS.size}] término: \"$term\" (acumulado: $totalNewOrChanged/$target) ---")
-        val allMapped = harvestMet(term) + harvestAic(term) + harvestCma(term) + harvestRijks(term)
+        val allMapped = (harvestMet(term) + harvestAic(term) + harvestCma(term) + harvestRijks(term))
+            .map { MovementOverrides.apply(it) }
         // Solo se escribe (y solo cuenta para el objetivo) lo elegible para el catálogo real
         // (painting/print, año >= 740 o desconocido) — ver `isEligibleForCatalog`. El resto se
         // descarta acá mismo, antes de tocar SQLite, para no inflar `artworks.db` con obras

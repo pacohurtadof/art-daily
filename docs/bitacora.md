@@ -1,5 +1,72 @@
 # Bitácora — ArtDaily
 
+## 2026-08-27 (continuación) — Clasificación de movimiento, tandas 6-9, pausada de nuevo
+
+Retomado tras reconectar el celular (se instaló primero el lote pendiente de la pausa
+anterior — confirmado en el dispositivo, mismo tamaño de archivo). Tandas 6, 7 y 8
+agregaron 35 + 46 + 52 = 133 obras más, para un total de **502 obras clasificadas**.
+Distribución acumulada: Ukiyo-e 147, Impresionismo 71, Realismo 68, Simbolismo 53,
+Postimpresionismo 48, Romanticismo 19, Escuela del río Hudson 19, Nabis 18, Expresionismo
+15, Neoclasicismo 13, Tonalismo 8, Luminismo 6, Modernismo 5, Escuela de Barbizon 4,
+Prerrafaelismo 2, Orientalismo 2, Manierismo 2, Fauvismo 1, Art Nouveau 1.
+
+Pausado de nuevo a pedido del usuario — quedan ~2629 obras sin revisar en el tramo de
+`rankScore` alto, con rendimiento cada vez más bajo (predominan Chen Hongshou, Min Zhen,
+Dürer, Schongauer, y series enteras de pintura china/japonesa tradicional que
+correctamente no tienen movimiento en este modelo). Mismo mecanismo para retomar: ver la
+entrada de abajo.
+
+## 2026-08-26 — Clasificación de movimiento obra por obra (en curso, pausada)
+
+Tras la expansión del catálogo, el usuario probó filtrar por "Impresionismo" en Explorar y
+vio solo 27 obras — investigado: de las 4 fuentes, **solo AIC** trae dato de movimiento
+limpio (44 de sus 138 obras); Met/CMA/Rijksmuseum (9946 obras) no traen ninguno. Se
+descartó (a propósito, decisión del usuario) un diccionario artista→movimiento automático:
+un mismo artista puede cambiar de movimiento a mitad de carrera (ej. Matisse pasa de
+Fauvismo ~1906 a un estilo posterior sin categoría clara hacia 1921). Se eligió clasificar
+**obra por obra**, priorizando por `rankScore` descendente (las que más se muestran en la
+app primero).
+
+**Mecanismo**: `harvester/data/movement-overrides.csv` (versionado, `artworkId,movement`),
+aplicado por `MovementOverrides.kt` en el harvester como fallback cuando
+`MovementNormalizer` no encontró nada — durable, sobrevive a futuras cosechas.
+
+**Diccionario de movimientos ampliado** (`MovementNormalizer`, pedido explícito del
+usuario — "los actuales no son todos los que existieron"): Simbolismo, Ukiyo-e, Escuela
+del río Hudson, Luminismo, Tonalismo, Escuela de Barbizon, Prerrafaelismo, Nabis,
+Precisionismo, Orientalismo, Escuela Ashcan.
+
+**Dos bugs reales de normalización encontrados y arreglados de paso**:
+- El matching por substring de `PeriodNormalizer`/`MovementNormalizer` no respetaba
+  límites de palabra — verificado en vivo contra la API real de AIC: dos Delacroix con
+  `style_titles = [..., "romantic"]` quedaban con `period = "Antigua Roma"` porque "roman"
+  calzaba dentro de "roman**tic**". Fix: regex con `\b...\b` + el match más largo/específico
+  gana entre varios candidatos.
+- `Neoclasicismo`/`Romanticismo` estaban duplicados en `PeriodNormalizer` Y
+  `MovementNormalizer` (el propio comentario de la clase decía que no debían mezclarse) —
+  sacados de `PeriodNormalizer`, quedan solo como movimiento.
+
+**Progreso a la pausa** (5 tandas, ~900 obras revisadas de mayor a menor `rankScore`):
+**369 obras clasificadas** en 17 movimientos (Ukiyo-e 93, Realismo 59, Impresionismo 59,
+Simbolismo 39, Postimpresionismo 37, Nabis 17, Escuela del río Hudson 12, Neoclasicismo 11,
+Romanticismo 9, Expresionismo 9, Tonalismo 7, Modernismo 5, Luminismo 4, Escuela de
+Barbizon 3, Orientalismo 2, Manierismo 2, Fauvismo 1). Aplicado a
+`app/src/main/assets/artworks.db`, pendiente de instalar en el celular (se desconectó a
+mitad de la sesión) y de commitear/pushear (no pedido todavía).
+
+**Quedan ~3400 obras sin revisar** solo en el nivel de `rankScore` más alto (y ~8200 en
+total) — la mayoría van a seguir correctamente en `null` (Renacimiento/Barroco/arte
+tradicional chino-coreano-japonés no-ukiyo-e, ya cubiertos por `period`, no por
+`movement`). Pausado a pedido del usuario — retomar generando la próxima tanda con:
+```sql
+SELECT id, title, artistName, creationDateText, creationYearStart, museum, sourceApi, rankScore, period
+FROM artworks WHERE classification IN ('painting','print') AND movement IS NULL
+ORDER BY rankScore DESC, id LIMIT 250;
+```
+(excluyendo los ids que ya aparecen en `harvester/data/movement-overrides.csv`, para no
+revisar dos veces los que ya se clasificaron — los que se dejaron en `null` a propósito no
+tienen esa protección todavía, pueden reaparecer y está bien, se vuelven a decidir igual).
+
 ## 2026-08-25 — Tres bugs reales, ícono nuevo, y expansión del catálogo
 
 ### Tres bugs reportados por el usuario

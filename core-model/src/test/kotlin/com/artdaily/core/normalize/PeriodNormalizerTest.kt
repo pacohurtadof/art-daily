@@ -43,4 +43,21 @@ class PeriodNormalizerTest {
     fun `returns null when no candidate matches`() {
         assertNull(PeriodNormalizer.normalize("unrelated", "also unrelated"))
     }
+
+    @Test
+    fun `does not match a word that only contains a key as a substring`() {
+        // Regresión de un bug real encontrado el 2026-08-26 (verificado en vivo contra la
+        // API real de AIC): dos Delacroix con `style_titles` conteniendo literalmente
+        // "romantic" quedaban con period="Antigua Roma", porque un `.contains()` ingenuo
+        // hacía que "roman" calzara dentro de "roman**tic**" — palabras distintas. Con
+        // límites de palabra, "roman" ya no matchea ahí; correctamente queda sin periodo
+        // ("romantic" es pista de un *movimiento*, no de un periodo — ver MovementNormalizer).
+        assertNull(PeriodNormalizer.normalize("romantic"))
+        assertNull(PeriodNormalizer.normalize("nineteenth century, 19th century, romantic"))
+    }
+
+    @Test
+    fun `still matches roman as its own standalone word`() {
+        assertEquals("Antigua Roma", PeriodNormalizer.normalize("Ancient Roman sculpture"))
+    }
 }
