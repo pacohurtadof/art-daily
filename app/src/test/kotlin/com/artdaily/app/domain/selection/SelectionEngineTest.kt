@@ -4,6 +4,7 @@ import com.artdaily.app.data.local.HistoryEntity
 import com.artdaily.core.model.Artwork
 import com.artdaily.core.model.ArtworkFilter
 import kotlinx.coroutines.runBlocking
+import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -161,5 +162,63 @@ class SelectionEngineTest {
             avoidRepeatDays = 30
         )
         assertEquals("a", result?.id)
+    }
+
+    // 2026-08-28: sesgo hacia obras "icónicas" (curaduría manual, pedido del usuario para
+    // que no se aburra viendo solo obras que no reconoce). `random` es un `var` interno
+    // justamente para poder forzar el resultado del sorteo acá sin depender de una seed —
+    // ver el comentario en `SelectionEngine.random`.
+
+    @Test
+    fun `favors the iconic sub-pool when the biased roll succeeds`() = runBlocking {
+        val repo = FakeArtworkRepository(
+            listOf(artwork("a"), artwork("b").copy(isIconic = true))
+        )
+        val engine = SelectionEngine(repo, FakeHistoryDao())
+        engine.random = FixedRandom(rollBelowBiasThreshold = true, pickedIndex = 0)
+
+        val result = engine.pickForWidget(widgetId = 1, filter = ArtworkFilter(), avoidRepeatDays = 30)
+
+        assertEquals("b", result?.id) // el único candidato icónico, aunque el índice sorteado sea 0
+    }
+
+    @Test
+    fun `falls back to the full pool when the biased roll fails, even with iconic candidates present`() =
+        runBlocking {
+            val repo = FakeArtworkRepository(
+                listOf(artwork("a"), artwork("b").copy(isIconic = true))
+            )
+            val engine = SelectionEngine(repo, FakeHistoryDao())
+            engine.random = FixedRandom(rollBelowBiasThreshold = false, pickedIndex = 0)
+
+            val result = engine.pickForWidget(widgetId = 1, filter = ArtworkFilter(), avoidRepeatDays = 30)
+
+            // Índice 0 del pool COMPLETO (no del sub-pool icónico) es "a", no-icónica — si el
+            // sesgo restringiera igual al sub-pool icónico, esto devolvería "b" y fallaría.
+            assertEquals("a", result?.id)
+        }
+
+    @Test
+    fun `never restricts to the iconic sub-pool when there are no iconic candidates`() = runBlocking {
+        val repo = FakeArtworkRepository(listOf(artwork("a")))
+        val engine = SelectionEngine(repo, FakeHistoryDao())
+        // Roll favorable al sesgo, pero no hay ninguna obra icónica disponible — no debe
+        // trabarse ni devolver null, tiene que caer al pool completo igual.
+        engine.random = FixedRandom(rollBelowBiasThreshold = true, pickedIndex = 0)
+
+        val result = engine.pickForWidget(widgetId = 1, filter = ArtworkFilter(), avoidRepeatDays = 30)
+
+        assertEquals("a", result?.id)
+    }
+
+    /** `Random` fake con control total: `nextFloat()` decide si el sesgo hacia el sub-pool
+     * icónico "gana" el sorteo, `nextInt(until)` decide qué índice se elige dentro de lo que
+     * haya quedado — sin esto, los tests de arriba no podrían distinguir "restringió al
+     * sub-pool icónico" de "le tocó por azar en el pool completo". */
+    private class FixedRandom(rollBelowBiasThreshold: Boolean, private val pickedIndex: Int) : Random() {
+        private val floatValue = if (rollBelowBiasThreshold) 0f else 0.99f
+        override fun nextBits(bitCount: Int): Int = 0
+        override fun nextFloat(): Float = floatValue
+        override fun nextInt(until: Int): Int = pickedIndex.coerceIn(0, (until - 1).coerceAtLeast(0))
     }
 }

@@ -31,7 +31,30 @@ object ClassificationNormalizer {
         "arms and armor" to "arms_and_armor",
         "books" to "book",
         "manuscripts" to "manuscript",
-        "coins" to "coin"
+        "coins" to "coin",
+        // 2026-08-27: bug real encontrado — AIC no manda la palabra "painting"/"print" en
+        // `classification_title`, manda el MEDIO real (ej. "oil on canvas", "etching"). El
+        // match por substring de abajo nunca los reconocía, así que caían en "other" y quedaban
+        // afuera del catálogo (`isEligibleForCatalog` solo acepta painting/print) — de hecho
+        // así se perdía "The Bedroom" de Van Gogh (AIC, classification_title="oil on canvas").
+        // Términos vistos en vivo contra la API real de AIC (ver docs/bitacora.md).
+        "oil on canvas" to "painting",
+        "oil on panel" to "painting",
+        "oil on board" to "painting",
+        "tempera on panel" to "painting",
+        "tempera on canvas" to "painting",
+        "acrylic on canvas" to "painting",
+        "etching" to "print",
+        "engraving" to "print",
+        "drypoint" to "print",
+        "lithograph" to "print",
+        "mezzotint" to "print",
+        "aquatint" to "print",
+        "screenprint" to "print",
+        "linocut" to "print",
+        "monotype" to "print",
+        "chromolithograph" to "print",
+        "woodcut" to "print"
         // se amplía con cada fuente nueva que se incorpore
     )
 

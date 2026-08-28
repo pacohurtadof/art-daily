@@ -20,7 +20,9 @@ import androidx.room.RoomDatabase
     // v3 (2026-08-19): `widget_config` cambió `museum`/`century` por `yearFrom`/`yearTo`
     // (ver ArtworkFilter.kt / WidgetConfigEntity.kt). Sin migración escrita a propósito en
     // ninguno de los dos casos, ver `fallbackToDestructiveMigration` en DatabaseModule.
-    version = 3
+    // v4 (2026-08-28): `artworks` agregó `isIconic` (curaduría manual de obras conocidas,
+    // ver ArtworkEntity.kt / SelectionEngine.kt). Tampoco tiene migración escrita.
+    version = 4
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun artworkDao(): ArtworkDao

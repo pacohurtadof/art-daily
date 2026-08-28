@@ -43,5 +43,15 @@ data class Artwork(
     val accessionNumber: String?,
     val museumFlaggedHighlight: Boolean, // ej. Met `isHighlight` — señal fuerte para el ranking
     val rankScore: Float,               // ver RankScoreCalculator
-    val harvestedAt: Long               // timestamp de la última cosecha, para auditar
+    val harvestedAt: Long,              // timestamp de la última cosecha, para auditar
+    // 2026-08-28 (pedido del usuario: "priorizar obras más conocidas para que no se
+    // aburra de ver obras que no conoce"). Ninguna fuente expone una señal de fama real
+    // (rankScore mide COMPLETITUD de metadatos, no reconocimiento — ver
+    // RankScoreCalculator). Se evaluaron dos caminos: heurística automática vía Wikidata/
+    // Wikipedia (escala sola, pero el cruce por título/artista es impreciso y puede fallar
+    // en silencio) o curaduría manual obra por obra (mismo patrón ya usado para
+    // `movement`). El usuario eligió curaduría manual a propósito, por precisión — ver
+    // `harvester/IconicOverrides.kt`/`harvester/data/iconic-overrides.txt`. Default
+    // `false`: la enorme mayoría del catálogo no está revisada todavía.
+    val isIconic: Boolean = false
 )

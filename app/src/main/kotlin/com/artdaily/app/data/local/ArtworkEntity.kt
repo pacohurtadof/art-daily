@@ -46,5 +46,6 @@ data class ArtworkEntity(
     val accessionNumber: String?,
     val museumFlaggedHighlight: Boolean,
     val rankScore: Float,
-    val harvestedAt: Long
+    val harvestedAt: Long,
+    val isIconic: Boolean = false
 )

@@ -23,6 +23,15 @@ private const val CMA_BASE_URL = "https://openaccess-api.clevelandart.org/"
 private const val RIJKS_BASE_URL = "https://data.rijksmuseum.nl/"
 private const val BATCH_SIZE = 150 // por consulta, por fuente — 2026-08-25: subido de 100 a 150 (se probó 250 y disparó un bloqueo temporal de Incapsula/WAF en Met, ver docs/bitacora.md) para la cosecha de ~10.000 obras
 
+// 2026-08-27: bug real encontrado — AIC SÍ tiene un tope real de `limit` (100), a diferencia
+// de Met/CMA/Rijks. Pedir 150 (BATCH_SIZE) devuelve 403 "Invalid limit", que el catch de
+// harvestAic descartaba en silencio como si fuera un error de red cualquiera — desde que
+// BATCH_SIZE subió a 150 (2026-08-25), CADA búsqueda a AIC venía fallando entera, sin aportar
+// ni una obra nueva en una semana de cosechas (confirmado: las 138 filas de `aic` en la base
+// quedaron todas con harvestedAt del 2026-08-19). Constante separada para no repetir el error
+// si BATCH_SIZE vuelve a subir en el futuro.
+private const val AIC_BATCH_SIZE = 100
+
 // 2026-08-25: bloqueo temporal real del WAF (Incapsula) de Met durante la primera corrida de
 // la cosecha grande (250/término disparó cientos de 403 seguidos) — se recuperó solo a los
 // pocos minutos, pero insistir contra un bloqueo activo solo lo empeora/alarga. Este circuit
@@ -52,9 +61,25 @@ private const val MIN_ELIGIBLE_YEAR = 740
  * la limpieza manual del 2026-08-25, que en SQL tampoco toca los NULL (`NULL < 740` es NULL,
  * no true).
  */
+// 2026-08-27 (pedido del usuario: "quitar los sketches y bocetos, dejar solo obras") — no
+// hay campo de la fuente que distinga boceto/estudio preparatorio de obra terminada, así que
+// se detecta por el título. Solo `\bsketch(es)?\b` y `\bstud(y|ies)\b` (con la "y"/"ies"
+// exacta, no basta con que la palabra empiece igual) — probado en vivo contra los 79 títulos
+// reales del catálogo que contenían "sketch"/"study"/"studie": atrapa los 75 que son bocetos
+// de verdad (ej. "Study for 'Bathers at Asnières'" de Seurat, "Sheet of Studies" de Rembrandt)
+// y NO atrapa los 4 donde "study" significa el cuarto/habitación, no el boceto (ej. "Saint
+// Jerome in his Study by Candlelight", "Old Man in his Study") — de ahí la excepción de abajo.
+private val SKETCH_PATTERN = Regex("""\bsketch(es)?\b|\bstud(y|ies)\b|\bstudieblad\b|\banatomische studie\b""", RegexOption.IGNORE_CASE)
+private val STUDY_AS_ROOM_PATTERN = Regex("""\b(his|her|its|their|the)\s+study\b|study\s+window|study\s+by\s+candlelight""", RegexOption.IGNORE_CASE)
+
+private fun Artwork.isSketchOrStudy(): Boolean =
+    SKETCH_PATTERN.containsMatchIn(title) && !STUDY_AS_ROOM_PATTERN.containsMatchIn(title)
+
 private fun Artwork.isEligibleForCatalog(): Boolean {
     val year = creationYearStart
-    return classification in ELIGIBLE_CLASSIFICATIONS && (year == null || year >= MIN_ELIGIBLE_YEAR)
+    return classification in ELIGIBLE_CLASSIFICATIONS &&
+        (year == null || year >= MIN_ELIGIBLE_YEAR) &&
+        !isSketchOrStudy()
 }
 
 /**
@@ -125,6 +150,7 @@ fun main(args: Array<String>) = runBlocking {
 
     val allMapped = (harvestMet(query) + harvestAic(query) + harvestCma(query) + harvestRijks(query))
         .map { MovementOverrides.apply(it) }
+        .map { IconicOverrides.apply(it) }
     // El listado en consola muestra TODO lo mapeado (sirve para inspeccionar qué hay,
     // incluidas cosas que no vamos a guardar) — lo que se persiste en `saveAndReportDelta`
     // sí respeta el filtro de elegibilidad (ver `isEligibleForCatalog`), igual que el modo bulk.
@@ -135,7 +161,13 @@ fun main(args: Array<String>) = runBlocking {
         println(
             "- [%.1f]%s (%s) %s — %s (%s) | periodo=%s movimiento=%s siglo=%s | %s".format(
                 a.rankScore,
-                if (a.isEligibleForCatalog()) "" else " [excluida: ${a.classification}/${a.creationYearStart}]",
+                if (a.isEligibleForCatalog()) {
+                    ""
+                } else if (a.isSketchOrStudy()) {
+                    " [excluida: boceto/estudio]"
+                } else {
+                    " [excluida: ${a.classification}/${a.creationYearStart}]"
+                },
                 a.sourceApi,
                 a.title,
                 a.artistName ?: "Artista desconocido",
@@ -168,6 +200,7 @@ private suspend fun runBulkHarvest(target: Int, dbPath: String) {
         println("\n--- [${index + 1}/${BULK_QUERY_TERMS.size}] término: \"$term\" (acumulado: $totalNewOrChanged/$target) ---")
         val allMapped = (harvestMet(term) + harvestAic(term) + harvestCma(term) + harvestRijks(term))
             .map { MovementOverrides.apply(it) }
+        .map { IconicOverrides.apply(it) }
         // Solo se escribe (y solo cuenta para el objetivo) lo elegible para el catálogo real
         // (painting/print, año >= 740 o desconocido) — ver `isEligibleForCatalog`. El resto se
         // descarta acá mismo, antes de tocar SQLite, para no inflar `artworks.db` con obras
@@ -261,7 +294,7 @@ private suspend fun harvestAic(query: String): List<Artwork> {
 
     println("Buscando en AIC: q=\"$query\" ...")
     val searchResult = try {
-        aicApi.search(query = query, limit = BATCH_SIZE)
+        aicApi.search(query = query, limit = AIC_BATCH_SIZE)
     } catch (e: Exception) {
         System.err.println("[aic] búsqueda \"$query\" -> error de red/parseo: ${e.message}")
         return emptyList()

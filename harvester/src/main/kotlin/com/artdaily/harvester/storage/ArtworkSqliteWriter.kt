@@ -32,6 +32,7 @@ class ArtworkSqliteWriter(private val dbPath: String) {
         DriverManager.getConnection("jdbc:sqlite:$dbPath").use { conn ->
             conn.autoCommit = false
             createTable(conn)
+            addIconicColumnIfMissing(conn)
 
             // Se lee el estado PREVIO antes de insertar, para poder comparar y saber qué
             // realmente cambió (si se leyera después, ya estaría pisado por el INSERT OR REPLACE).
@@ -91,7 +92,8 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                     accessionNumber TEXT,
                     museumFlaggedHighlight INTEGER NOT NULL,
                     rankScore REAL NOT NULL,
-                    harvestedAt INTEGER NOT NULL
+                    harvestedAt INTEGER NOT NULL,
+                    isIconic INTEGER NOT NULL DEFAULT 0
                 )
                 """.trimIndent()
             )
@@ -127,6 +129,21 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                 )
                 """.trimIndent()
             )
+        }
+    }
+
+    /** `CREATE TABLE IF NOT EXISTS` no toca una tabla `artworks` que ya existía de antes de
+     * agregar `isIconic` (2026-08-28) — hace falta un `ALTER TABLE` aparte para los archivos
+     * `artworks.db` ya generados por corridas previas del harvester. Idempotente: si la
+     * columna ya existe (tabla creada de cero con el `CREATE TABLE` de arriba, que ya la
+     * incluye), SQLite tira "duplicate column name" y se ignora a propósito. */
+    private fun addIconicColumnIfMissing(conn: Connection) {
+        conn.createStatement().use { stmt ->
+            try {
+                stmt.execute("ALTER TABLE artworks ADD COLUMN isIconic INTEGER NOT NULL DEFAULT 0")
+            } catch (e: java.sql.SQLException) {
+                if (e.message?.contains("duplicate column", ignoreCase = true) != true) throw e
+            }
         }
     }
 
@@ -178,7 +195,8 @@ class ArtworkSqliteWriter(private val dbPath: String) {
         accessionNumber = getString("accessionNumber"),
         museumFlaggedHighlight = getBoolean("museumFlaggedHighlight"),
         rankScore = getFloat("rankScore"),
-        harvestedAt = getLong("harvestedAt")
+        harvestedAt = getLong("harvestedAt"),
+        isIconic = getBoolean("isIconic")
     )
 
     private fun ResultSet.getNullableInt(column: String): Int? {
@@ -193,8 +211,8 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                 creationYearStart, creationYearEnd, period, movement, century, culture, country,
                 classification, museum, museumId, imageUrlFull, imageUrlThumbnail, sourceUrl,
                 sourceApi, license, isPublicDomain, description, creditLine, descriptionAttribution,
-                dimensions, accessionNumber, museumFlaggedHighlight, rankScore, harvestedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                dimensions, accessionNumber, museumFlaggedHighlight, rankScore, harvestedAt, isIconic
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
         conn.prepareStatement(sql).use { ps ->
@@ -229,7 +247,8 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                 ps.setNullableString(i++, a.accessionNumber)
                 ps.setBoolean(i++, a.museumFlaggedHighlight)
                 ps.setFloat(i++, a.rankScore)
-                ps.setLong(i, a.harvestedAt)
+                ps.setLong(i++, a.harvestedAt)
+                ps.setBoolean(i, a.isIconic)
                 ps.addBatch()
             }
             val results = ps.executeBatch()

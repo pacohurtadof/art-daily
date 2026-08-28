@@ -34,7 +34,8 @@ fun ArtworkEntity.toArtwork(): Artwork = Artwork(
     accessionNumber = accessionNumber,
     museumFlaggedHighlight = museumFlaggedHighlight,
     rankScore = rankScore,
-    harvestedAt = harvestedAt
+    harvestedAt = harvestedAt,
+    isIconic = isIconic
 )
 
 /** Usado al sincronizar `artworks-delta-*.json` hacia Room (pendiente: worker de sync). */
@@ -68,5 +69,6 @@ fun Artwork.toEntity(): ArtworkEntity = ArtworkEntity(
     accessionNumber = accessionNumber,
     museumFlaggedHighlight = museumFlaggedHighlight,
     rankScore = rankScore,
-    harvestedAt = harvestedAt
+    harvestedAt = harvestedAt,
+    isIconic = isIconic
 )

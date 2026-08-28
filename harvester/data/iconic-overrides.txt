@@ -1,0 +1,73 @@
+# Curaduría manual de obras verdaderamente icónicas/reconocidas (2026-08-28).
+# Un artworkId por línea — la presencia acá ya es el dato (ver IconicOverrides.kt).
+# Criterio: reconocibles incluso fuera de círculos de historia del arte, o absolutamente
+# canónicas dentro de la obra de su autor (ej. las tres "Meisterstiche" de Durero). Primer
+# lote, ~39 obras — se puede seguir ampliando en el mismo espíritu que las tandas de
+# movimiento (obra por obra, sin adivinar).
+
+# Van Gogh
+aic:28560   # The Bedroom
+met:436528  # Irises
+met:436535  # Wheat Field with Cypresses
+met:437980  # Cypresses
+met:437984  # La Berceuse
+aic:80607   # Self-Portrait
+
+# Munch
+aic:17229   # The Scream
+aic:111372  # Madonna
+aic:17343   # The Sick Child
+aic:88398   # The Girls on the Bridge
+aic:43301   # The Vampire II
+
+# Rembrandt
+rijks:200107934  # Isaac and Rebecca, known as "The Jewish Bride"
+aic:29207         # The Return of the Prodigal Son
+aic:13094         # The Hundred Guilder Print
+
+# Dürer (las tres "Meisterstiche" + otros grabados canónicos)
+aic:11100   # Knight, Death, and the Devil
+aic:28260   # Melencolia I
+aic:28279   # St. Jerome in His Study
+aic:55330   # The Four Horsemen of the Apocalypse
+aic:51498   # Adam and Eve
+aic:30283   # The Rhinoceros
+
+# Gauguin
+aic:63068    # Manao Tupapau (She Thinks of the Ghost)
+met:438821   # Ia Orana Maria (Hail Mary)
+
+# Goya
+met:338473  # The Sleep of Reason Produces Monsters, Los Caprichos Plate 43
+
+# Hokusai
+aic:77333   # Under the Wave off Kanagawa (The Great Wave)
+
+# Hiroshige
+rijks:200134877  # Sudden Shower over Shin-Ōhashi Bridge and Atake
+
+# Toulouse-Lautrec
+aic:61128    # At the Moulin Rouge
+cma:137246   # Jane Avril
+
+# Cézanne
+aic:111436   # The Basket of Apples
+met:435868   # The Card Players
+cma:135185   # Mount Sainte-Victoire
+
+# Degas
+met:436139  # Dancers Practicing at the Barre
+
+# Monet
+aic:16568    # Water Lilies
+cma:136510   # Water Lilies (Agapanthus)
+aic:16571    # Arrival of the Normandy Train, Gare Saint-Lazare
+aic:16584    # Houses of Parliament, London
+aic:16560    # Stack of Wheat (Snow Effect, Overcast Day)
+
+# Seurat
+aic:27992   # A Sunday on La Grande Jatte — 1884
+
+# Manet
+cma:104013  # Olympia (grabado)
+cma:107038  # The Execution of Emperor Maximilian

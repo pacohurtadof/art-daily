@@ -1,5 +1,186 @@
 # Bitácora — ArtDaily
 
+## 2026-08-28 (continuación 2) — Priorizar obras conocidas + primer release real de datos
+
+Pedido del usuario: priorizar obras más conocidas en la selección diaria, "para que no se
+aburra de ver muchas obras que no conoce". Diagnóstico primero: ninguna fuente expone una
+señal de fama real (`rankScore` mide completitud de metadatos, no reconocimiento;
+`museumFlaggedHighlight` solo lo pone el Met). Se le presentaron dos caminos — heurística
+automática vía Wikidata/Wikipedia (escala sola, pero el cruce por título/artista es
+impreciso) o curaduría manual obra por obra (mismo patrón que `movement`) — **eligió
+curaduría manual a propósito, por precisión**.
+
+**Implementado:**
+- `Artwork.isIconic: Boolean` nuevo (core-model) + columna en Room (`AppDatabase` v3→v4,
+  `fallbackToDestructiveMigration`, sin migración escrita) + columna en
+  `ArtworkSqliteWriter` (con `ALTER TABLE ... ADD COLUMN` idempotente para no romper
+  archivos `artworks.db` ya generados por corridas previas).
+- `IconicOverrides.kt` (harvester) — mismo patrón que `MovementOverrides`, pero más simple:
+  `harvester/data/iconic-overrides.txt`, un `artworkId` por línea con comentario inline
+  (`aic:28560   # The Bedroom`) documentando qué es cada obra.
+- **Primer lote curado a mano, 39 obras**: The Scream y Madonna de Munch, The Bedroom e
+  Irises de Van Gogh, las tres "Meisterstiche" de Durero (Knight Death and the Devil,
+  Melencolia I, St. Jerome in His Study) + Four Horsemen/Adam and Eve/Rhinoceros, The
+  Great Wave de Hokusai, A Sunday on La Grande Jatte de Seurat (la pieza insignia del AIC),
+  The Jewish Bride de Rembrandt, Olympia de Manet (grabado), At the Moulin Rouge de
+  Toulouse-Lautrec, y más — lista completa en `harvester/data/iconic-overrides.txt`.
+- `SelectionEngine.pickForWidget`: sesgo del 60% (`ICONIC_BIAS`) a elegir del sub-pool
+  icónico cuando hay alguno disponible ese día, el resto de las veces pool completo — no
+  100% a propósito, para no agotar rápido un pool de cientos de obras ni perder la gracia
+  de "una obra distinta cada día" explorando el catálogo real. `random: Random` quedó como
+  `var` interno (no en el constructor) para poder inyectar un `Random` fake en tests sin
+  que Hilt intente resolver un binding — Dagger/Hilt no respeta valores default de
+  parámetros de constructor Kotlin. 3 tests nuevos con un `FixedRandom` que controla tanto
+  `nextFloat()` (decide si gana el sesgo) como `nextInt()` (decide qué índice), para poder
+  distinguir "restringió al sub-pool icónico" de "le tocó por azar en el pool completo".
+
+**Encontrado en vivo mientras se verificaba**: el sync automático (`DailyArtworkWorker` →
+`ArtworkSyncService`, pull del `delta.json` del último release de GitHub) le seguía
+pisando datos a la app de prueba con el release viejo (de antes de todos los fixes de
+esta semana) — esta vez se comió justo "El grito" y "La Gran Jatte" del flag nuevo.
+Ya era el segundo feature verificado a medias por este motivo (ver la entrada de ayer). El
+usuario decidió esta vez sí publicar el release real:
+
+**Primer release real de datos con todo lo de esta semana** (`data-20260828`,
+`github.com/pacohurtadof/art-daily/releases`): en vez de usar el `delta.json` incremental
+de la última corrida individual del harvester (que el script `publish-release.sh` toma
+por default — solo hubiera traído los cambios de la ÚLTIMA búsqueda, no de toda la
+semana), se generó un delta.json con el **catálogo completo actual** (10373 obras) para
+que cualquier dispositivo quede 100% al día en un solo sync, sin importar qué release
+tenía antes. Verificado end-to-end: instalación limpia (`pm clear` + relanzar) mostró
+39/39 obras icónicas correctas de entrada, y se mantuvo así después de esperar (antes,
+con el release viejo, bajaba a 30/39 por el sync). Este pendiente (publicar release) queda
+cerrado — ver `docs/TODO.md`.
+
+## 2026-08-28 — Continuación: 14 artistas más, "El grito" de Munch
+
+Pedido del usuario en la sesión anterior ("en la siguiente sesión vamos a tratar de
+conseguir más obras de artistas populares"), retomado hoy con el mismo mecanismo del
+2026-08-27 (`./gradlew :harvester:run --args="<artista> output/artworks.db"` uno por uno
+contra las 4 fuentes reales, ya con el filtro de bocetos/estudios y los 2 fixes de AIC
+activos de la sesión anterior).
+
+| Artista | Antes | Después |
+|---|---|---|
+| Munch | 7 | **103** |
+| Turner | 60 | **141** |
+| Dürer | 119 | **217** |
+| Hiroshige | 73 | **169** |
+| Hokusai | 45 | **138** |
+| Toulouse-Lautrec | 109 | **189** |
+| Gauguin | 40 | **93** |
+| Renoir | 44 | **81** |
+| Degas | 34 | **80** |
+| Bruegel | 7 | **9** |
+| Velázquez | 4 | **9** |
+| Sargent | 3 | **11** |
+| Bosch | 3 | **4** |
+| Klimt | 0 | 0 (nada disponible en estas 4 fuentes) |
+
+**Catálogo total: 9612 → 10373 obras.** Hallazgo destacado: Munch pasó de 7 a 103 obras
+gracias sobre todo a CMA (fuerte en grabados de Munch), y entre ellas apareció **"El
+grito"** (aic:17229) — verificado en vivo directo contra la base del dispositivo
+(`run-as com.artdaily.app cat .../artworks.db`), una de las pinturas más reconocibles
+del mundo, sumada al "El dormitorio" de Van Gogh conseguido ayer.
+
+Instalado y verificado en el Pixel 10 (`pm clear` + reinstalar + comparación directa
+contra la base real del dispositivo, no solo compilar). Total en dispositivo: 10341
+(vs 10373 local — mismo desfase ya conocido por el sync con el release viejo de GitHub,
+sigue pendiente publicar uno nuevo, ver `docs/TODO.md`).
+
+## 2026-08-27 (continuación 6) — Filtro de bocetos/estudios preparatorios
+
+Pedido del usuario: sacar los sketches/bocetos del catálogo, dejar solo obra terminada.
+Ninguna de las 4 fuentes tiene un campo que distinga "boceto preparatorio" de "obra
+terminada" — se detecta por el título. Se armó el patrón (`\bsketch(es)?\b|\bstud(y|ies)\b`,
+con la "y"/"ies" exacta) probándolo en vivo contra los 79 títulos reales del catálogo que
+contenían "sketch"/"study"/"studie": atrapaba 68 de entrada, se afinó a 75/79 agregando
+`studieblad`/`anatomische studie` (neerlandés) — y se agregó una excepción explícita
+(`STUDY_AS_ROOM_PATTERN`) para los 4 casos donde "study" es el cuarto/habitación, no el
+boceto ("Saint Jerome in his Study by Candlelight", "Old Man in his Study", "A Scholar in
+His Study", "Out of Study Window"), que NO debían borrarse.
+
+Implementado en `Artwork.isEligibleForCatalog()` (`harvester/src/main/kotlin/.../Main.kt`,
+mismo lugar que el filtro de clasificación/año) — afecta cosechas futuras. Limpieza
+retroactiva del catálogo actual: 75 filas borradas de `harvester/output/artworks.db`
+(9687 → 9612 painting/print), copiado a `assets/artworks.db`, instalado y verificado en
+vivo (control: "Environs of Rome" de Corot, que no debía tocarse, sigue intacto).
+
+Ejemplos reales que salieron: "Study for 'Bathers at Asnières'" (Seurat), "Sheet of
+Studies" (Rembrandt, varias), "Study for 'The Bear Hunt'" (Rubens), "Sketch for 'The
+Oriental Dream'" (Lecomte du Nouÿ), toda la serie "Campaign Sketches" de Winslow Homer.
+
+## 2026-08-27 (continuación 5) — Obras icónicas de 14 maestros + 2 bugs reales de AIC
+
+Pedido del usuario: agregar más obras icónicas/emblemáticas de grandes maestros (Van
+Gogh, Rembrandt, Picasso, Goya, Da Vinci, etc.) para que sean "lo atractivo de la app".
+
+**Dos bugs reales encontrados investigando por qué Van Gogh/Picasso/Cézanne/Monet
+rendían tan poco** (14/13/5/10 obras respectivamente antes de esto):
+
+1. **AIC estaba completamente roto desde el 2026-08-25.** Al subir `BATCH_SIZE` de 100 a
+   150 (para la cosecha grande de ~10.000 obras), se rompió el límite real de AIC — su
+   API cachea 403 "Invalid limit" si se pide más de 100 por página. El `catch` genérico
+   de `harvestAic` lo tragaba como un error de red cualquiera, en silencio. Confirmado:
+   las 138 filas de `aic` en la base quedaron todas con `harvestedAt` del 2026-08-19 —
+   una semana entera de cosechas (incluida la expansión a ~9000-10000 obras del
+   2026-08-25/26) sin una sola fila nueva de AIC. Fix: `AIC_BATCH_SIZE = 100` separado
+   de `BATCH_SIZE`, usado solo en `harvestAic` (`harvester/src/main/kotlin/.../Main.kt`).
+
+2. **`ClassificationNormalizer` buscaba la palabra "painting"/"print" como substring
+   literal**, pero AIC manda el MEDIO real en `classification_title` (`"oil on canvas"`,
+   `"etching"`, `"engraving"`, etc.), nunca la palabra "painting"/"print" en sí. Bug
+   mucho más viejo que el #1 (existía desde el diseño original del normalizador) —
+   confirmado en vivo con "El dormitorio" de Van Gogh (AIC, `classification_title="oil
+   on canvas"`, `is_public_domain=true`, con imagen): se mapeaba, pero cala en `classification="other"`
+   y quedaba excluido del catálogo entero (`isEligibleForCatalog` solo acepta
+   painting/print). Un sondeo rápido contra la API real (5 queries, 100 resultados cada
+   una) mostró 145 "etching" + 39 "oil on canvas" + 29 "engraving" + 13 "oil on panel" +
+   otros — todos cayendo en "other" antes del fix. Fix: se agregaron ~17 términos de
+   medio reales (`oil on canvas/panel/board`, `tempera on panel/canvas`, `acrylic on
+   canvas`, `etching`, `engraving`, `drypoint`, `lithograph`, `mezzotint`, `aquatint`,
+   `screenprint`, `linocut`, `monotype`, `chromolithograph`, `woodcut`) a
+   `ClassificationNormalizer` (core-model), con 2 tests de regresión nuevos.
+
+**Con los dos fixes, se cosecharon 14 maestros uno por uno** (modo normal del
+harvester, `./gradlew :harvester:run --args="<nombre> output/artworks.db"`, contra las 4
+fuentes reales cada vez):
+
+| Artista | Antes | Después |
+|---|---|---|
+| Van Gogh | 14 | 27 (incluye "El dormitorio", AIC) |
+| Rembrandt | 560 | 654 |
+| Goya | 144 | 244 |
+| Monet | 10 | 38 |
+| Cézanne | 5 | 21 |
+| Tiziano | 0 | 30 |
+| Rafael | 0 | 20 |
+| Vermeer | 5 | 5 (sin cambio) |
+| Matisse | 2 | 4 |
+| Caravaggio | 0 | 5 |
+| Botticelli | 0 | 5 |
+| Miguel Ángel | 0 | 1 |
+| Da Vinci | 1 | 2 |
+| Picasso | 13 | 13 (sin cambio) |
+
+**Catálogo total: 9084 → 9687 obras** painting/print. AIC pasó de 138 a 572 filas (el
+salto más grande, gracias sobre todo al fix #2).
+
+**Limitación real que hay que aceptar, no un bug**: Picasso/Da Vinci/Vermeer/Matisse/
+Miguel Ángel casi no tienen presencia real en estas 4 fuentes. Sus obras más icónicas
+(Mona Lisa, Guernica, La joven de la perla, La noche estrellada) están en museos que no
+son fuente de esta app (Louvre, Reina Sofía, Mauritshuis, MoMA), y Picasso/Matisse
+además siguen con derechos de autor vigentes en la mayoría de colecciones "open
+access" (no es solo cuestión de qué museo). Pendiente: evaluar si vale la pena agregar
+una fuente nueva para esto — ver `docs/TODO.md`.
+
+Tests unitarios verdes (55+, incluidos los 2 nuevos de `ClassificationNormalizerTest`).
+**Pendiente de instalar/verificar en vivo** — el celular de prueba se desconectó a mitad
+de la sesión (`adb devices` no lo ve). `app/src/main/assets/artworks.db` ya está
+regenerada y copiada, solo falta `pm clear` + reinstalar + confirmar. Ver `docs/TODO.md`
+para este pendiente y los demás que salieron de esta sesión (evaluar fuentes nuevas,
+clasificar movimiento de las ~603 obras nuevas).
+
 ## 2026-08-27 (continuación 4) — Tandas 16-24, se pasa las 1800, entra MET al pool
 
 Continuación directa de la tanda 15 (1012 obras), sosteniendo el mismo tramo de
