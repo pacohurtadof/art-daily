@@ -1,5 +1,34 @@
 # Bitácora — ArtDaily
 
+## 2026-08-28 (continuación 3) — Tandas 25-32, se pasan las 2600, pausado sin verificar
+
+Retomado el trabajo de clasificación de movimiento (mismo tramo `rankScore` 3.0-3.99,
+mismo mecanismo de tandas). El celular de prueba no estuvo conectado en NINGUNA de las 8
+tandas de esta sesión — todo lo de abajo está aplicado a `harvester/output/artworks.db` y
+copiado a `app/src/main/assets/artworks.db`, con tests unitarios pasando, pero **sin
+instalar/verificar en vivo todavía**.
+
+Progreso por tanda: 25→2091 (148/250, ~59%, AIC rindiendo fuerte con Rembrandt/Dürer/
+Hiroshige/Munch), 26→2263 (172/250, ~69%, mismo pool AIC — Goya, Turner Liber Studiorum,
+grabadores manieristas del norte de Europa: Goltzius, Saenredam, Adamo Scultori),
+27→2441 (178/250, ~71%, pico del pool AIC — Toulouse-Lautrec/Renoir/Degas/Gauguin/Munch
+casi agotados ahí), 28→2581 (140/250, ~56%, empieza a mezclar MET — Van Gogh/Degas/
+Cézanne del Met, más el resto de Munch/Gauguin de AIC), 29→2634 (53/250, ~21%, primer
+bloque grande de Renacimiento/Barroco puro del Met sin movimiento aplicable — El Greco sí
+dio Manierismo, Tintoretto también), 30→2640 (6/250, ~2.4%, Rowlandson + Hollar + el
+cluster gigante de autorretratos de Rembrandt del Met/Rijks), 31→2640 (**0/250**, tanda
+casi 100% Rembrandt/reproducciones del Rijksmuseum — el fondo real del pozo de ese
+cluster), 32→2651 (11/250, ~4.4%, retratos de artistas famosos por grabadores menores de
+reproducción — encontró a Louis Valtat, primer uso real de Fauvismo en el catálogo).
+
+**Total: 2651 obras clasificadas** (`movement-overrides.csv`, 2535 líneas con cabecera).
+Pausado a pedido del usuario tras dos tandas seguidas de rendimiento muy bajo (0% y
+4.4%) — recomendación explícita de pausar en vez de seguir forzando, dada además la
+falta de verificación en vivo acumulada. Quedan 3684 obras sin revisar en el tramo
+`rankScore` 3.0-3.99: cma 1485, rijks 1493, met 418, aic 288 (AIC casi agotado en este
+tramo). **Pendiente crítico para retomar: conectar el celular e instalar/verificar todo
+lo acumulado desde la tanda 25** antes de seguir con más tandas — ver `docs/TODO.md`.
+
 ## 2026-08-28 (continuación 2) — Priorizar obras conocidas + primer release real de datos
 
 Pedido del usuario: priorizar obras más conocidas en la selección diaria, "para que no se

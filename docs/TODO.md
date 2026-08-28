@@ -6,6 +6,17 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
 ## Pendientes abiertos
 
+- [x] ~~Conectar el celular e instalar/verificar todo lo acumulado desde la tanda 25 de
+  movimiento~~ — hecho el 2026-08-28. Al instalar, el sync automático pisó la
+  clasificación de movimiento de las tandas 25-32 (2651 → 1943 en el dispositivo, el
+  APK bundleaba los datos correctos — confirmado desunzipeándolo — pero el último
+  release publicado era de antes de esas tandas). Se republicó el release del mismo día
+  (se borró el viejo con `gh release delete` y se recreó con el catálogo completo
+  actual) y se reinstaló limpio: **2651 clasificadas, 39 icónicas**, estable después de
+  esperar. Mismo patrón que el hallazgo del 2026-08-28 (continuación 2) — si esto sigue
+  pasando cada vez que se retoman las tandas, considerar automatizar "publicar release"
+  como último paso del pipeline en vez de un paso manual aparte.
+
 - [x] ~~Reconectar el celular de prueba, instalar y verificar en vivo los cambios del
   2026-08-27~~ — hecho. Verificado directo contra la base del dispositivo (`run-as` +
   `cat`): "The Bedroom" de Van Gogh presente y bien clasificado, CMA/Met/Rijksmuseum
