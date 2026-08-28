@@ -1,5 +1,87 @@
 # Bitácora — ArtDaily
 
+## 2026-08-27 (continuación 4) — Tandas 16-24, se pasa las 1800, entra MET al pool
+
+Continuación directa de la tanda 15 (1012 obras), sosteniendo el mismo tramo de
+`rankScore` (3.0-3.99) y la misma metodología obra-por-obra. Progreso por tanda:
+16→1097, 17→1220, 18→1391 (incluye las 118 obras de ilustración temprana de Winslow
+Homer, siempre Realismo sin importar la fecha — a diferencia de Whistler/Manet, su
+estilo no varía), 19→1524, 20→1576 (cayó a ~21%, primer bloque grande de miniaturas
+persas/indias del "Tuti-nama" de CMA sin movimiento aplicable), 21→1640, 22→1711
+(cluster grande de pinturas Mughal/Rajput y álbumes budistas/taoístas chinos, todos
+`null`), 23→1757 (bloque de caricaturas "Vanity Fair" — Leslie Ward/Tissot/Pellegrini
+— dejado `null` a propósito: es sátira de revista, no encaja en ningún movimiento del
+diccionario, y mezclar por artista habría sido inconsistente), 24→**1869** (el pool
+de CMA en este tramo ya estaba muy agotado de arte occidental — el rendimiento subió
+de nuevo a ~45% al empezar a aparecer filas de MET en la consulta, que trae su propio
+inventario sin tocar en este tramo).
+
+Movimientos nuevos que aparecieron por primera vez en estas tandas (ya estaban en el
+diccionario, solo no se habían usado): ninguno nuevo — se siguió reutilizando el set
+de 29 movimientos existente. Reglas por artista aplicadas por primera vez en esta
+tanda que vale la pena recordar para el futuro:
+- **Rodolphe Bresdin** → Simbolismo (precursor visionario directo de Redon).
+- **Frank Short, Charles Meryon, Auguste Lepère, Maxime Lalanne** → grabadores del
+  "Etching Revival" británico/francés; Meryon/Lepère/Lalanne se clasificaron Realismo
+  (vistas urbanas naturalistas), Frank Short se dejó `null` (revival británico propio,
+  sin encaje limpio).
+- **Turner, Blake, Constable (vía David Lucas), Bonington, Cotman, Fuseli, Ernst
+  Fries** → Romanticismo (paisaje/visión romántica anglo-alemana).
+- **Northern Mannerism** (Hans Vredeman de Vries, Philips/Philip Galle, Giorgio Ghisi,
+  Adamo Scultori, Jan Muller, Matthias Zündt, Jacopo Palma il Giovane, Sodoma) →
+  Manierismo — primer uso real de este movimiento del diccionario en volumen.
+- **David Roberts / Louis Haghe "Egypt and Nubia"** (litografías, Haghe litografió los
+  dibujos de Roberts) → Orientalismo.
+- **John Rubens Smith / John Hill, "Hudson River Portfolio"** → Escuela del río
+  Hudson (por tema, no solo por pertenencia del artista al círculo original).
+- Se decidió dejar `null`, a propósito, todo el arte no-occidental sin escuela
+  occidental clara (miniatura persa/india/mughal, pintura china de época Ming/Qing,
+  ukiyo-e sí se sigue marcando pero Kano/Rinpa no) y las caricaturas de revista
+  (Vanity Fair, Thomas Nast) — no porque falte tiempo, sino porque forzar un
+  movimiento occidental sobre ellas sería clasificarlas mal.
+
+**Total: 1869 obras clasificadas** en `harvester/data/movement-overrides.csv` (1826
+líneas, incluye cabecera). Distribución completa: Realismo 383, Ukiyo-e 361,
+Romanticismo 299, Impresionismo 182, Postimpresionismo 173, Tonalismo 124, Simbolismo
+87, Nabis 52, Escuela de Barbizon 40, Escuela del río Hudson 35, Neoclasicismo 33,
+Expresionismo 30, Orientalismo 27, Manierismo 17, Luminismo 9, Modernismo 5, Art
+Nouveau 4, Prerrafaelismo 3, Futurismo 2, y Fauvismo/Dadaísmo/Cubismo con 1 cada uno.
+
+Pausado a pedido del usuario tras la tanda 24. Quedan **3406 obras sin revisar** en el
+tramo `rankScore` 3.0-3.99 (cma: 1494, rijks: 1469, met: 427, aic: 16) — rijks
+(Rijksmuseum) todavía no se ha tocado en ninguna tanda de este tramo, sería la fuente
+más nueva a explorar si el rendimiento vuelve a caer con cma/met. Retomar generando
+la próxima tanda con el mismo patrón de consulta de las tandas 14-24 (ver
+`/tmp/movement_batch_24.csv` como referencia de formato), excluyendo los ids de
+`/tmp/reviewed_ids.txt` (efímero, se pierde entre sesiones — si no existe, hay que
+reconstruirlo o aceptar que se van a re-mostrar algunos ids ya decididos, sin
+problema real ya que el apply es idempotente vía `WHERE movement IS NULL`).
+
+## 2026-08-27 (continuación 3) — Tandas 13-15, cambio de estrategia, se pasa las 1000
+
+Tanda 13 (rankScore alto) siguió con rendimiento bajísimo (14/250, ~5.6% — casi toda
+Rembrandt/grabadores renacentistas). El usuario propuso probar un tramo distinto:
+**bajar el piso de `rankScore` de 4.0 a 3.0**, en vez de seguir agotando la cola del
+tramo alto. Cambio de estrategia acertado — el rendimiento subió fuerte:
+- Tanda 14 (rankScore 3.0-3.99): 140/250 (~56%) — obra gráfica completa de Manet y
+  Whistler (con la misma distinción por fecha de antes: Whistler temprano/pre-1870 =
+  Realismo, tardío = Tonalismo), Charles-Émile Jacque y Alphonse Legros (Barbizon/
+  Realismo), decenas más de ukiyo-e.
+- Tanda 15: 179/250 (~72%) — las tres series completas de grabados de Goya (Caprichos,
+  Desastres de la Guerra, Tauromaquia, las tres a Romanticismo) y el resto casi completo
+  del corpus de grabados de Whistler.
+
+**Total: 1012 obras clasificadas** (pasó las 1000) en 22 movimientos. Distribución:
+Ukiyo-e 235, Realismo 150, Romanticismo 132, Impresionismo 106, Tonalismo 99, Simbolismo
+67, Postimpresionismo 60, Nabis 46, Escuela del río Hudson 27, Escuela de Barbizon 22,
+Expresionismo 20, Neoclasicismo 18, Luminismo 9, Orientalismo 6, Modernismo 5,
+Prerrafaelismo 3, Manierismo 2, y 4 con 1 obra cada uno.
+
+**Lección para retomar**: cuando el rendimiento caiga mucho en un tramo de `rankScore`,
+probar un tramo más bajo en vez de seguir agotando la cola del actual — la composición
+del catálogo varía bastante entre tramos (el tramo 3.0-3.99 tiene mucha más obra
+gráfica de artistas ya identificados, en vez de solo Rembrandt/Renacimiento alemán).
+
 ## 2026-08-27 (continuación 2) — Tandas 9-12, pausada de nuevo
 
 Retomado tras el commit del README/catálogo. Tandas 9, 10, 11 y 12 agregaron 36 + 54 +
