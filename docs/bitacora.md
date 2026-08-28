@@ -1,5 +1,22 @@
 # Bitácora — ArtDaily
 
+## 2026-08-27 (continuación 2) — Tandas 9-12, pausada de nuevo
+
+Retomado tras el commit del README/catálogo. Tandas 9, 10, 11 y 12 agregaron 36 + 54 +
+66 + 21 = 177 obras más, para un total de **679 obras clasificadas** en 22 movimientos.
+La tanda 12 (mayoría Rijksmuseum, Siglo de Oro holandés) tuvo un rendimiento mucho más
+bajo (21/250, ~8%) que las anteriores — señal clara de que se está entrando a la parte
+del catálogo donde casi todo corresponde a periodo (Barroco/Renacimiento), no movimiento.
+
+Distribución acumulada: Ukiyo-e 188, Impresionismo 93, Realismo 93, Simbolismo 62,
+Postimpresionismo 59, Nabis 46, Romanticismo 39, Escuela del río Hudson 25, Expresionismo
+19, Neoclasicismo 17, Luminismo 9, Escuela de Barbizon 6, Tonalismo 8, Modernismo 5,
+Prerrafaelismo 3, Orientalismo 2, Manierismo 2, Futurismo 1, Fauvismo 1, Dadaísmo 1,
+Cubismo 1, Art Nouveau 1.
+
+Pausado de nuevo a pedido del usuario, con la recomendación explícita de pausar dado el
+rendimiento decreciente. Mismo mecanismo para retomar (ver entrada de abajo).
+
 ## 2026-08-27 (continuación) — Clasificación de movimiento, tandas 6-9, pausada de nuevo
 
 Retomado tras reconectar el celular (se instaló primero el lote pendiente de la pausa
