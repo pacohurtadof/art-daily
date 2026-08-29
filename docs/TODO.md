@@ -6,6 +6,15 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
 ## Pendientes abiertos
 
+- [ ] **Si vuelve a pasar seguido "no se ve la imagen en el widget/la app"**: primero
+  descartar de nuevo el bloqueo puntual de Cloudflare en el CDN de imágenes de AIC
+  (`www.artic.edu/iiif/...`, no `api.artic.edu` — la API JSON no se ve afectada) antes
+  de asumir un bug de código. Confirmado el 2026-08-28 que es puntual (volumen de
+  tráfico de esa sesión), no estructural — ver `docs/bitacora.md`. Si se repite seguido
+  en el futuro (no solo el día que cosechamos en volumen), recién ahí vale la pena
+  evaluar un fix real (ej. espaciar más las corridas del harvester contra AIC, o ver si
+  Cloudflare también empieza a bloquear tráfico normal de usuarios reales).
+
 - [x] ~~Conectar el celular e instalar/verificar todo lo acumulado desde la tanda 25 de
   movimiento~~ — hecho el 2026-08-28. Al instalar, el sync automático pisó la
   clasificación de movimiento de las tandas 25-32 (2651 → 1943 en el dispositivo, el

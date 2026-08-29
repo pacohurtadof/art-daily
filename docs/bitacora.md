@@ -1,5 +1,37 @@
 # Bitácora — ArtDaily
 
+## 2026-08-28 (continuación 4) — "Bug" reportado: sin imagen en el widget (no era bug)
+
+Usuario reportó que el widget no mostraba ninguna imagen. Diagnóstico en vivo en el
+celular de prueba (agregando logging temporal a `WidgetImageDownloader`, revertido
+después de encontrar la causa — no quedó en el código):
+
+- La API JSON de AIC (`api.artic.edu`) responde perfecto (200 OK).
+- El **CDN de imágenes** de AIC (`www.artic.edu/iiif/2/...`) devuelve un challenge
+  "Just a moment..." de Cloudflare (403) — verificado con `curl` directo, tanto desde
+  la Mac como (por estar en la misma red WiFi, "A Casa Poo") desde el celular.
+- Met (`images.metmuseum.org`), Cleveland (`openaccess-cdn.clevelandart.org`) y
+  Rijksmuseum (`iiif.micr.io`) cargan imágenes sin problema — el bloqueo es específico
+  de AIC, no de la red en general ni de la app.
+- El widget de prueba justo tenía asignada una obra de AIC (Gauguin, "Manao Tupapau")
+  — por eso se notó ahí, pero el mismo bloqueo afecta cualquier imagen de AIC en toda
+  la app mientras dure.
+- El fallback de `WidgetImageDownloader`/`ArtWidget` funcionó exactamente como está
+  diseñado: si la descarga falla, el widget cae a solo texto en vez de romperse. No es
+  un bug de la app — es Cloudflare bloqueando temporalmente la IP de esta red,
+  casi seguro por el volumen altísimo de peticiones automatizadas contra AIC durante
+  toda la sesión de hoy (decenas de corridas del harvester + miles de llamadas).
+
+Ya estaba anotado como riesgo conocido desde que se integró AIC (comentario en
+`AicMapper.kt`: "Cloudflare devolvió un challenge anti-bot [...] pendiente confirmar
+que carga bien desde una red residencial / la app real antes de darlo por sentado").
+Hoy se confirmó que sí carga bien en general (la app llevaba semanas mostrando obras de
+AIC sin este problema) — esto es puntual, por el volumen de tráfico de HOY, no un
+problema estructural. Debería resolverse solo en un rato (el bloqueo de Incapsula/WAF
+del Met del 2026-08-25 se resolvió solo a los pocos minutos; este podría tardar más
+por el volumen mucho mayor de hoy). Ningún cambio de código — nada que commitear de
+esta entrada. Si vuelve a pasar seguido, ver `docs/TODO.md`.
+
 ## 2026-08-28 (continuación 3) — Tandas 25-32, se pasan las 2600, pausado sin verificar
 
 Retomado el trabajo de clasificación de movimiento (mismo tramo `rankScore` 3.0-3.99,
