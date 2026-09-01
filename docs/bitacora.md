@@ -1,5 +1,133 @@
 # Bitácora — ArtDaily
 
+## 2026-08-31 (continuación 2) — Tercera ronda de artistas populares + verificación en vivo
+
+Primero se verificó en vivo lo pendiente de la ronda anterior (Cassatt/Rubens/Kandinsky):
+`pm clear` + instalación limpia, extracción directa de la base del dispositivo — **10473
+obras confirmadas, 39 icónicas, estable**. Sin sorpresas esta vez porque no hubo sync de
+por medio (instalación fresca desde `assets/`).
+
+Después, respondiendo a "qué artistas nos faltan", se armó un lote nuevo de candidatos
+pre-1955 (sin riesgo de copyright) que no se habían cosechado a propósito todavía —
+prerrafaelitas, Nabis, y un par de sueltos que aparecían con muy poca presencia en
+búsquedas exploratorias:
+
+| Artista | Antes | Después |
+|---|---|---|
+| Henri Rousseau (Le Douanier) | 9 | **50** |
+| Édouard Vuillard | 19 | **64** |
+| Gustave Moreau | 1 | **24** |
+| Pierre Bonnard | 6 | **26** |
+| John Everett Millais | 0 | **10** |
+| William Holman Hunt | 0 | **8** |
+| Piet Mondrian | 1 | **6** |
+| Frans Hals | 5 | **8** |
+| Rosa Bonheur | 2 | **4** |
+| Dante Gabriel Rossetti | 0 | **1** |
+| Edward Burne-Jones | 0 | **1** |
+| Frederic Leighton | 1 | 1 (sin cambio) |
+| Grant Wood | 0 | 0 (sin cambio) |
+
+**Catálogo total: 10473 → 10939 obras** (+466 — más que la suma de los deltas por
+artista arriba, ~159; la búsqueda de cada fuente no es un match exacto por campo
+"artista", así que trae también obras relacionadas/coincidentes que después el ranking
+y los filtros ya existentes procesan igual que siempre). Grant Wood en 0 confirma que
+"American Gothic" del Art Institute of Chicago no está en su set de open access (pieza
+demasiado icónica/vigilada incluso siendo de 1930); Leighton se quedó igual, sin obra
+adicional disponible en estas 4 fuentes.
+
+Se generó el delta completo del catálogo (10939 filas, mismo shape que el modelo
+`Artwork` de Kotlin) y se publicó como release `data-20260831` en GitHub — mismo patrón
+ya establecido para evitar que el sync automático pise trabajo con un release viejo. El
+celular se reconectó poco después: `pm clear` + instalación limpia + extracción directa
+de la base del dispositivo confirmó **10939 obras, conteos por artista exactos, 39
+icónicas intactas**. Estable.
+
+## 2026-08-31 (continuación) — Segunda ronda de artistas populares
+
+Pedido del usuario: seguir con la lista de candidatos que había quedado pendiente del
+2026-08-28 (Cassatt, Seurat, Manet, Rubens, Vermeer, Chagall, Schiele, Kandinsky).
+Mismo mecanismo de siempre, uno por uno contra las 4 fuentes reales:
+
+| Artista | Antes | Después |
+|---|---|---|
+| Cassatt | 3 | **48** |
+| Rubens | 7 | **17** |
+| Kandinsky | 1 | **5** |
+| Seurat | 3 | 3 (sin cambio) |
+| Vermeer | 4 | 4 (sin cambio) |
+| Chagall | 0 | 0 (sin cambio) |
+| Schiele | 0 | 0 (sin cambio) |
+
+**Catálogo total: 10373 → 10473 obras.** Cassatt fue el hallazgo grande — pasó de
+prácticamente nada a 48 obras reales (AIC tiene una colección fuerte de ella, tiene
+sentido siendo el museo de Chicago). Seurat/Vermeer/Chagall/Schiele no aportaron nada:
+los primeros dos ya estaban en el techo real de lo que estas 4 fuentes tienen (sus
+obras más conocidas están en el Musée d'Orsay/Mauritshuis, fuera de nuestras fuentes);
+los últimos dos siguen con copyright vigente en la práctica pese a que Schiele
+técnicamente debería ser dominio público desde 1988 — simplemente no está en estas
+colecciones. No se intentó con Frida Kahlo/Warhol/Dalí por la misma razón de derechos
+de autor que ya se confirmó con Picasso/Matisse/Chagall (altísima probabilidad de 0).
+
+Tests unitarios verdes. **Pendiente instalar/verificar en vivo** — el celular de prueba
+no estuvo conectado durante esta cosecha.
+
+## 2026-08-31 — Cierre real del "bloqueo de Cloudflare en AIC": nunca fue un problema
+
+Seguimiento del hallazgo del 2026-08-28 (imagen faltante en el widget). El usuario
+preguntó cuánto duraría, y se dejó un monitor en segundo plano pegándole a
+`www.artic.edu/iiif/...` cada 2 minutos — casi 2 días seguidos, siempre 403 ("Just a
+moment..."). Ante la pregunta directa del usuario ("¿qué probabilidad hay de que nos
+haya bloqueado permanentemente?"), se probó desde una red totalmente distinta a la del
+usuario (WebFetch, infraestructura de Anthropic) — **también 403**, tanto en el CDN de
+imágenes como en la ficha de obra normal (`www.artic.edu/artworks/...`). Eso descartaba
+la teoría original ("nos flaggearon la IP de la red del usuario por volumen") — parecía
+más bien un challenge anti-bot general del sitio contra cualquier cliente sin motor
+JavaScript.
+
+**La prueba que realmente importaba**: abrir la app de verdad en el celular real
+(`am start` con el extra `artworkId=aic:28560`, el mismo mecanismo que usa el widget al
+tocarlo) y ver si Coil/OkHttp cargaba la imagen. **Cargó perfecto, al primer intento** —
+"The Bedroom" de Van Gogh, a color, completa. Ni `curl` ni el fetcher de Anthropic
+pudieron nunca (llevaban ~48h fallando), pero la app sí, todo el tiempo.
+
+**Conclusión real**: el challenge de Cloudflare de `www.artic.edu` es contra
+herramientas automatizadas sin motor JS — no contra tráfico real de la app, no una
+sanción por IP, no un bloqueo que "se libera con el tiempo" porque nunca bloqueó lo que
+importaba. Fue un artefacto de cómo se estaba diagnosticando (`curl`), no un problema
+real del producto. **Lección para el futuro**: verificar contra la app/dispositivo real
+primero cuando se sospeche un bloqueo de red — `curl` puede dar un falso positivo
+rotundo si el sitio protegido usa un challenge JS. Cerrado en `docs/TODO.md`.
+
+## 2026-08-28 (continuación 5) — Tandas 33-35, pausado por rendimiento y fotografías
+
+Retomadas las tandas de movimiento (2651 → 2701). Rendimiento cayendo tanda a tanda:
+33→2679 (28/250, ~11%, todavía retratos de reproducción del Rijksmuseum pero con algunos
+hallazgos reales — primer uso de Neoclasicismo en volumen vía Jean Baptiste Mauzaisse y
+Raffaello Morghen, Manierismo vía Giorgio Ghisi/Etienne Dupérac/Roelant Savery), 34→2698
+(19/250, ~7.6%, Willem Witsen y los Amsterdam Impressionists rindieron bien —
+8 obras—, más Sickert/Bracquemond/Menpes), 35→2701 (**3/250, ~1.2%**).
+
+**Hallazgo real en la tanda 35**: el pool restante del Rijksmuseum en este tramo ya no
+es mayormente pintura/grabado — es **fotografía documental/de viaje del siglo XIX**
+(ruinas de Sri Lanka, Gran Cañón, India, Nueva York, perros premiados en exposiciones
+caninas de 1891). `ClassificationNormalizer` las está mapeando a `"print"` (el campo
+real de la fuente dice algo como "photographic print", que matchea el substring
+"print") — por eso entran al catálogo de "obra del día" como si fueran pinturas/
+grabados, cuando en realidad son fotografías documentales, fuera del espíritu de la
+app ("una obra distinta cada día"). Conteo aproximado (año ≥1839, año de invención de
+la fotografía, heurística imprecisa pero orientativa): 385 de las 1443 filas
+`rijks`/`print` sin movimiento en este tramo. **No se tocó el código** — es una
+decisión de producto (¿cuenta una foto de viaje de 1891 como "obra" para esta app?),
+no algo para decidir unilateralmente. Ver `docs/TODO.md`.
+
+Total: **2701 obras clasificadas** (`movement-overrides.csv`, 2585 líneas). Pausado a
+pedido del usuario tras rendimiento muy bajo + este hallazgo. El celular de prueba se
+desconectó varias veces durante esta sesión (parece intermitencia del cable/puerto USB,
+no relacionado al código) — nada de esto se instaló/verificó en vivo todavía, sigue
+pendiente igual que las tandas 25-32 (aunque esas sí se verificaron después, ver la
+entrada de esa continuación).
+
 ## 2026-08-28 (continuación 4) — "Bug" reportado: sin imagen en el widget (no era bug)
 
 Usuario reportó que el widget no mostraba ninguna imagen. Diagnóstico en vivo en el

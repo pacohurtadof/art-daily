@@ -6,14 +6,39 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
 ## Pendientes abiertos
 
-- [ ] **Si vuelve a pasar seguido "no se ve la imagen en el widget/la app"**: primero
-  descartar de nuevo el bloqueo puntual de Cloudflare en el CDN de imágenes de AIC
-  (`www.artic.edu/iiif/...`, no `api.artic.edu` — la API JSON no se ve afectada) antes
-  de asumir un bug de código. Confirmado el 2026-08-28 que es puntual (volumen de
-  tráfico de esa sesión), no estructural — ver `docs/bitacora.md`. Si se repite seguido
-  en el futuro (no solo el día que cosechamos en volumen), recién ahí vale la pena
-  evaluar un fix real (ej. espaciar más las corridas del harvester contra AIC, o ver si
-  Cloudflare también empieza a bloquear tráfico normal de usuarios reales).
+- [ ] **Decidir qué hacer con las fotografías documentales/de viaje del siglo XIX del
+  Rijksmuseum** (encontrado el 2026-08-28 durante la tanda 35 de movimiento). Su
+  `classification_title` real (algo como "photographic print") matchea el substring
+  "print" en `ClassificationNormalizer`, así que quedan como `classification="print"` —
+  elegibles para "obra del día" igual que un grabado real. Ejemplos: ruinas de Sri
+  Lanka, el Gran Cañón, el valle de Cachemira, perros premiados en una exposición canina
+  de 1891. Ninguna tiene movimiento artístico aplicable (por eso el rendimiento de las
+  tandas se derrumbó al llegar a este bloque). Es una decisión de producto, no un bug:
+  ¿cuentan como "obra" para esta app, o deberían excluirse (nueva clasificación
+  "photograph" separada de "print", o filtro adicional en `isEligibleForCatalog`)?
+  Aproximación (imprecisa): ~385 de las 1443 filas `rijks` sin movimiento en el tramo
+  rankScore 3.0-3.99 tienen año ≥1839 (invención de la fotografía). Ver
+  `docs/bitacora.md` para el detalle completo.
+
+- [ ] **Continuar las tandas de movimiento** (pausadas en 2701 obras clasificadas,
+  2026-08-28) — el pool restante en rankScore 3.0-3.99 sigue teniendo pinturas/grabados
+  reales sin fotografías mezcladas en AIC (288 restantes) y MET (418 restantes); CMA
+  (1485) no se ha tocado en este tramo todavía. Si se decide excluir las fotografías
+  del Rijksmuseum (ítem de arriba) antes de retomar, el rendimiento de las tandas en
+  `rijks` debería mejorar bastante.
+
+- [x] ~~Bloqueo de Cloudflare en el CDN de imágenes de AIC~~ — cerrado el 2026-08-31,
+  no era lo que parecía. Monitoreado ~2 días seguidos (`curl` y hasta el fetcher de
+  Anthropic, desde una red totalmente distinta a la del usuario, ambos siguieron dando
+  403 "Just a moment..." sin parar). Pero la prueba que importa — la app real, en el
+  celular real, con Coil/OkHttp — cargó "The Bedroom" de Van Gogh perfecto al primer
+  intento. Conclusión: el challenge de Cloudflare en `www.artic.edu` (imágenes Y la
+  ficha de obra) es contra herramientas sin motor JS (`curl`, crawlers) específicamente,
+  no un bloqueo de IP ni nada que afecte al tráfico real de la app. **No era un
+  problema real, nunca lo fue para un usuario** — era un artefacto de cómo se estaba
+  probando. Ver `docs/bitacora.md` para el detalle completo. Lección para el futuro: si
+  hace falta verificar de nuevo si AIC responde, probar directo en la app/dispositivo
+  real primero — `curl` puede dar un falso positivo de "está caído".
 
 - [x] ~~Conectar el celular e instalar/verificar todo lo acumulado desde la tanda 25 de
   movimiento~~ — hecho el 2026-08-28. Al instalar, el sync automático pisó la
@@ -61,9 +86,26 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
   Gauguin, Toulouse-Lautrec, Degas, Renoir, Hokusai, Hiroshige). Catálogo: 9612 → 10373
   obras. Munch pasó de 7 a 103 e incluye **"El grito"** (aic:17229) — verificado en vivo
   en el dispositivo. Klimt siguió en 0 (no hay obra suya disponible en estas 4 fuentes).
-  Ver `docs/bitacora.md` ("continuación 7") para la tabla completa antes/después. Si se
-  quiere seguir ampliando, candidatos sin cosechar todavía: Cassatt, Seurat, Manet
-  (reforzar), Rubens, Vermeer (reforzar), Chagall, Schiele, Kandinsky.
+  Ver `docs/bitacora.md` ("continuación 7") para la tabla completa antes/después.
+
+- [x] ~~Seguir ampliando artistas populares (segunda ronda)~~ — hecho el 2026-08-31.
+  Cassatt (3→48) y Rubens (7→17) dieron obras nuevas de verdad; Seurat, Vermeer, Chagall
+  y Schiele no aportaron nada (ya estaban al tope de lo que estas 4 fuentes tienen, o
+  siguen con derechos de autor vigentes — Chagall murió 1985, Schiele curiosamente
+  debería ser dominio público desde 1988 pero simplemente no está en estas colecciones).
+  Kandinsky +4. Catálogo: 10373 → 10473 obras. Frida Kahlo/Warhol/Dalí no se intentaron
+  — misma razón de derechos de autor que Picasso/Matisse/Chagall, altísima probabilidad
+  de rendir 0. Verificado en vivo el mismo día (instalación limpia, 10473 confirmadas en
+  el dispositivo).
+
+- [x] ~~Seguir ampliando artistas populares (tercera ronda)~~ — hecho el 2026-08-31.
+  Rousseau (9→50), Vuillard (19→64) y Moreau (1→24) fueron los hallazgos grandes;
+  Bonnard, Millais, Holman Hunt, Mondrian, Frans Hals, Bonheur, Rossetti y Burne-Jones
+  aportaron algo menos pero real; Leighton y Grant Wood en 0 (ninguna obra de "American
+  Gothic" disponible en estas 4 fuentes). Catálogo: 10473 → 10939 obras. Release
+  `data-20260831` publicado en GitHub con el catálogo completo. Verificado en vivo el
+  mismo día (instalación limpia, 10939 confirmadas en el dispositivo, conteos por
+  artista exactos, 39 icónicas intactas).
 
 - [ ] **Ampliar la curaduría de obras "icónicas"** (`harvester/data/iconic-overrides.txt`,
   feature nuevo del 2026-08-28 — ver `docs/bitacora.md`). Primer lote: 39 obras a mano
