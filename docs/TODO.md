@@ -20,12 +20,21 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
   rankScore 3.0-3.99 tienen año ≥1839 (invención de la fotografía). Ver
   `docs/bitacora.md` para el detalle completo.
 
-- [ ] **Continuar las tandas de movimiento** (pausadas en 2701 obras clasificadas,
-  2026-08-28) — el pool restante en rankScore 3.0-3.99 sigue teniendo pinturas/grabados
-  reales sin fotografías mezcladas en AIC (288 restantes) y MET (418 restantes); CMA
-  (1485) no se ha tocado en este tramo todavía. Si se decide excluir las fotografías
-  del Rijksmuseum (ítem de arriba) antes de retomar, el rendimiento de las tandas en
-  `rijks` debería mejorar bastante.
+- [x] ~~Continuar las tandas de movimiento~~ — **agotadas del todo el 2026-08-31**, no
+  solo continuadas. Se revisó el rango rankScore 2.0-7.0 completo en las 4 fuentes (y se
+  confirmó que por debajo de 2.0 tampoco queda nada sin revisar) — no es una pausa,
+  no hay más candidatos por este mecanismo. 2715 → 3220 obras clasificadas en esta
+  sesión (+505), con foco pedido explícitamente en impresionismo (349 → 425, +76).
+  Lo que sigue sin `movement` (7719 de 10939) es por decisión ya tomada, no por falta de
+  revisión: sobre todo Siglo de Oro holandés/Barroco/Renacimiento (es periodo, no
+  movimiento, por diseño intencional del diccionario — ver `MovementNormalizer.kt`),
+  retratos anónimos de otros artistas, y reproducciones fotográficas. Si se cosechan
+  obras nuevas en el futuro (nuevos artistas, nuevas fuentes), sí van a aparecer
+  candidatos nuevos — retomar el mismo mecanismo (`movement-overrides.csv` +
+  `reviewed_ids.txt`) en ese caso. Ver `docs/bitacora.md` (2026-08-31) para el detalle
+  completo de las últimas tandas (36-47). Release `data-20260831` republicado con el
+  catálogo completo (10939 obras, 3220 clasificadas). Verificado en vivo el mismo día:
+  instalación limpia, 10939/3220/425 impresionismo/39 icónicas, todo exacto y estable.
 
 - [x] ~~Bloqueo de Cloudflare en el CDN de imágenes de AIC~~ — cerrado el 2026-08-31,
   no era lo que parecía. Monitoreado ~2 días seguidos (`curl` y hasta el fetcher de
