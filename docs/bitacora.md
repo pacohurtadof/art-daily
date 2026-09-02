@@ -1,5 +1,165 @@
 # Bitácora — ArtDaily
 
+## 2026-09-01 — Retomando el camino a Play Store: política de privacidad publicada
+
+Se retoma el pendiente del 2026-08-21 ("Pendiente para publicar"). Estado revisado a
+fondo antes de tocar nada:
+
+- **`targetSdk 37` ya cumple** el requisito nuevo de Google (apps nuevas deben targetear
+  API 36+ desde el 31 de agosto de 2026) — no hace falta subir nada.
+- **Dato desactualizado corregido**: la nota de "20+ testers en testing cerrado" ya no
+  es así — Google bajó el mínimo a **12 testers** en diciembre 2024 (se mantiene el
+  requisito de 14 días de opt-in continuo; el reloj arranca cuando se suma el tester
+  #12, no antes). Fuente verificada:
+  [support.google.com/googleplay/android-developer/answer/14151465](https://support.google.com/googleplay/android-developer/answer/14151465).
+- **Data safety**: se revisaron las dependencias (`gradle/libs.versions.toml`,
+  `app/build.gradle.kts`) — no hay Firebase/Analytics/Ads/Crashlytics ni SDK de terceros
+  que mande datos fuera del dispositivo. El único tráfico de red es leer imágenes de los
+  museos y bajar `delta.json` de GitHub Releases (ninguno identifica al usuario), más la
+  traducción de ML Kit que corre 100% on-device. El formulario debería poder llenarse
+  como "no se recopila información".
+
+**Hecho hoy**: política de privacidad pública (bilingüe ES/EN), publicada en una rama
+`gh-pages` limpia (sin mezclar con el resto del repo — usa un `git worktree` aparte para
+no tocar el working tree principal) con GitHub Pages activado vía `gh api`. Verificado
+en vivo (200 OK): **https://pacohurtadof.github.io/art-daily/**. Ese link es el que va
+en Play Console (App content → Privacy Policy y en la ficha de la tienda).
+
+**Sigue pendiente** (ver `docs/TODO.md` para el checklist completo): formulario de data
+safety (llenarlo en la consola con las respuestas de arriba), cuestionario de
+clasificación de contenido (tiene desnudos artísticos clásicos), ficha de la tienda
+(ícono 512×512, feature graphic 1024×500, capturas, descripción corta/larga), y arrancar
+cuanto antes el testing cerrado con 12 testers reales (14 días corridos — es lo que más
+tarda en el calendario, conviene arrancarlo en paralelo a lo demás).
+
+## 2026-09-01 (continuación) — Ficha de la tienda armada (ícono, feature graphic, capturas, textos)
+
+Mismo pedido, siguiente paso. Todo en `docs/store-listing/`:
+
+- **Ícono hi-res 512×512** (`hires_icon_512.png`): regenerado con el mismo recipe que el
+  ícono de launcher (2026-08-25) — foreground del lienzo pintado sobre fondo `#E4E4E4` —
+  pero componiendo desde `ic_launcher_foreground.png` de xxxhdpi (432px, no el legacy de
+  192px) para que la escala hacia 512 no perdiera nitidez. Con Pillow, vía `python3`.
+- **Feature graphic 1024×500**, ES y EN (`feature_graphic_es.png`/`_en.png`): el mismo
+  ícono con sombra suave + "ArtDaily" en Georgia Bold (dos tonos: "Art" en `WarmDark`,
+  "Daily" en `Orange40`, mismos hex que `ui/theme/Color.kt`) + tagline en Futura. El
+  tagline tenía overflow al borde derecho en el primer intento — se corrigió con
+  reducción dinámica de tamaño de fuente hasta que entra.
+- **6 capturas reales** (no mockups) tomadas contra la app corriendo de verdad: se
+  arrancó el emulador `ArtDaily_Test` (no estaba corriendo), `installDebug`, y se navegó
+  por `adb shell input tap/swipe` + `screencap` — Hoy ("Water Lilies" de Monet), Explorar
+  (grilla de filtros), Detalle (retrato de Tintoretto, se aprovechó para agregarlo a
+  favoritos en la misma pasada), Favoritos (2 obras), Ajustes (rotación de fondo).
+  **Widget agregado a la pantalla de inicio también por `adb`** (pedido aparte del
+  usuario, retomado en la misma sesión): resultó no necesitar drag-and-drop simulado —
+  el widget picker del launcher (Nexus Launcher) tiene un botón "Añadir" directo al
+  expandir el preview de un widget de 1 sola talla, que lo coloca en la primera página
+  con hueco libre sin arrastre. Capturado limpio (Water Lilies de nuevo, con
+  título/artista/museo/fecha).
+- **Textos ES/EN** (`listing-es.txt`/`listing-en.txt`): título, descripción corta y
+  completa, con los límites de Play Console (30/80/4000 caracteres) verificados con un
+  script (`len()` de Python), no a ojo.
+
+Los 10 archivos se mandaron al usuario. Falta: pegarlos en Play Console (ficha de la
+tienda) y decidir si conviene una captura del widget además de las 5 que ya hay.
+
+## 2026-08-31 (continuación 3) — Tandas 36-39, con foco fuerte en impresionismo
+
+Pedido del usuario: seguir con las tandas de movimiento, priorizando impresionismo.
+Antes de la tanda round-robin de siempre, se hizo una pasada dirigida: se buscó por
+nombre a los impresionistas core (Monet, Renoir, Degas, Pissarro, Morisot, Cassatt,
+Manet, Boudin, Bracquemond) sin movimiento asignado en todo el catálogo (no solo el
+tramo rankScore 3.0-3.99), revisando título/fecha uno por uno para decidir Impresionismo
+vs Realismo en los casos tempranos (obras de antes de que el movimiento existiera como
+tal — ej. el autorretrato de Degas de 1857, o los primeros óleos de Manet pre-Olympia,
+quedaron en Realismo por consistencia con un precedente ya existente en el catálogo).
+Cassatt quedó 100% clasificada (40 obras). **Impresionismo: 349 → 416 obras (+67)**.
+
+Después se completaron las tandas 36-39 (round-robin de siempre, con la sorpresa de que
+el tramo rankScore 3.0-3.99 se agotó del todo a mitad de camino — los últimos 147 rijks
+eran exactamente el problema ya documentado de fotografías/retratos documentales sin
+movimiento aplicable, ver ítem abierto de arriba). Se pasó al tramo rankScore=4.0
+(mucho más rico: Whistler, Bonnard, Vuillard completos, Kandinsky, Mondrian, Redon,
+Goya, Toulouse-Lautrec). Dos adiciones nuevas al vocabulario de movimientos usados:
+**Arte abstracto** (ya existía en el diccionario pero nunca se había usado en una tanda
+manual) para "Composition with Red, Yellow, and Blue" de Mondrian (1927) y "Painting
+with Green Center" de Kandinsky (1913, su período totalmente abstracto, distinto del
+Murnau expresionista/figurativo ya clasificado antes). Precedente nuevo confirmado para
+Whistler: pre-1870 (grabados tempranos del Támesis, estilo realista-documental) =
+Realismo; 1870 en adelante (nocturnos, atmosférico) = Tonalismo — coincide con lo que ya
+había en el catálogo de tandas previas.
+
+**Total clasificadas: 2715 → 3028 (+313).** Tests unitarios verdes. Copiado a
+`assets/artworks.db`.
+
+Se siguió (el usuario pidió más tandas): tanda 40 en rijks rankScore=4.0 rindió casi
+nada (1 de 250 — Courbet, fundador del Realismo; el resto puro grabado reproductivo/
+decorativo sin movimiento aplicable), confirmando que AIC/CMA/MET ya estaban agotados
+en ese tramo y solo quedaba rijks de baja señal. Se saltó a los tramos altos
+(rankScore 5.0-7.0, solo 14 obras sin revisar pero de alto valor — Bonnard, Burne-Jones,
+Mondrian x2, Matisse) y después a un tramo bajo pero nunca tocado (rankScore=2.0,
+184 obras de CMA) que sí rindió bien: la serie completa "Liber Studiorum" de Turner (44
+grabados → Romanticismo, coincide con las 80 ya clasificadas) y Jozef Israëls
+(Escuela de la Haya → Realismo). También primeras clasificaciones con **Arte
+abstracto** y **Cubismo** (Matisse "Apples" 1916, su pintura más cubista) en el
+vocabulario de movimientos usados manualmente.
+
+**Total clasificadas: 3028 → 3096 (+68 más).** Total de la sesión: 2715 → 3096 (+381).
+Tests verdes, copiado a assets.
+
+Se siguió una vez más (tandas 43-45): un batch de MET/rijks rank=2.0 (45 obras) rindió
+0 — todas sin `artistName` (arte religioso asiático, retratos anónimos, reproducciones
+fotográficas). Se pasó al pool grande de rijks rank=4.0 (976 obras, la reserva más
+grande que queda). Ahí sí hubo señal real mezclada entre el Siglo de Oro holandés
+(mayoría, sin movimiento aplicable — es periodo Barroco, no movimiento, correcto que
+quede null): **Antonio Tempesta** (22 grabados de una serie narrativa de 1612 →
+Manierismo), **Richard Nicolaüs Roland Holst** (7 obras → Simbolismo, simbolista
+holandés), **Marius Bauer** (3 obras de temática orientalista → Orientalismo, primer uso
+de esa categoría del diccionario) y un grupo de pintores de la **Escuela de la Haya**
+(Haagse School — Jozef Israëls, Willem Roelofs, August Allebé, Suze Robertson, Jacob
+Maris, Johannes Bosboom, Bernardus Blommers, Weissenbruch, Gerard Bilders, Théophile de
+Bock, Paul Gabriël) clasificados como **Realismo** por consistencia (es la rama
+holandesa paralela a Barbizon, sin entrada propia en el diccionario). También
+**George Hendrik Breitner** (impresionismo de Ámsterdam → Impresionismo, 4 obras) y
+Corot/Courbet/Diaz de la Peña (Barbizon/Realismo, ya con precedente).
+
+**Total clasificadas: 3096 → 3174 (+78 más). Impresionismo: 416 → 420.** Total de la
+sesión: 2715 → 3174 (+459). Tests verdes, copiado a assets.
+
+Se siguió una última vez (tandas 46-47, terminando el pool de rijks rank=4.0 hasta
+agotarlo): más **Escuela de la Haya** (Isaac Israels, Jozef Israëls, Jacob y Willem
+Maris, Anton Mauve → Realismo; Isaac Israels y Willem Witsen → Impresionismo por ser
+impresionismo de Ámsterdam), **Escuela de Barbizon** (Daubigny, Jules Dupré, Diaz de la
+Peña), Fantin-Latour (Realismo, círculo de "Hommage à Delacroix") y primer uso amplio de
+**Ukiyo-e** en tandas manuales (Utagawa Kunisada/Kuniyoshi/Toyokuni/Toyohara Kunichika,
+16 obras — Hokusai/Hiroshige ya venían con esta categoría de tandas anteriores).
+
+**Verificación final: se agotó el pool completo de tandas de movimiento.** Al terminar
+la tanda 47 (rijks rank=4.0), una consulta sin filtro de "ya revisado" mostró que
+**todo** el rango rankScore 2.0-7.0 en las 4 fuentes ya había sido revisado en algún
+momento de este proyecto (multi-sesión) — y por debajo de rank=2.0 tampoco queda nada
+sin tocar. No es una pausa: no hay más candidatos por este mecanismo. Lo que queda sin
+`movement` (7719 de 10939 obras elegibles) es así por decisión ya tomada, no por falta
+de revisión — sobre todo Siglo de Oro holandés/Barroco/Renacimiento (periodo, no
+movimiento, por diseño del diccionario), retratos anónimos de otros artistas, y
+reproducciones fotográficas.
+
+**Total clasificadas: 3174 → 3220 (+46 más). Impresionismo: 420 → 425.** Total de la
+sesión completa: 2715 → 3220 (+505), con foco fuerte en impresionismo (349 → 425, +76).
+Distribución final por movimiento: Ukiyo-e 549, Romanticismo 517, Realismo 494,
+Impresionismo 425, Postimpresionismo 355, Simbolismo 203, Tonalismo 135, Manierismo 124,
+Nabis 112, Neoclasicismo 88, Escuela de Barbizon 61, Escuela del río Hudson 35,
+Orientalismo 34, Expresionismo 32, Prerrafaelismo 21, Modernismo 9, Luminismo 9, Art
+Nouveau 7, Arte abstracto 3, Futurismo 2, Fauvismo 2, Cubismo 2, Dadaísmo 1. Tests
+verdes, copiado a assets.
+
+Se publicó el release `data-20260831` en GitHub con el catálogo completo (se borró el
+release del mismo día publicado más temprano — antes de las tandas 36-47 — y se
+recreó con el estado final). Verificado en vivo en el celular: `pm clear` +
+instalación limpia + extracción directa de la base del dispositivo confirmó **10939
+obras elegibles, 3220 clasificadas, 425 impresionismo, 39 icónicas** — todo exacto y
+estable.
+
 ## 2026-08-31 (continuación 2) — Tercera ronda de artistas populares + verificación en vivo
 
 Primero se verificó en vivo lo pendiente de la ronda anterior (Cassatt/Rubens/Kandinsky):

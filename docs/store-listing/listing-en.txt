@@ -1,0 +1,38 @@
+TITLE (max 30):
+ArtDaily
+
+SHORT DESCRIPTION (max 80):
+A different masterpiece every day, on your home screen. No ads.
+
+FULL DESCRIPTION (max 4000):
+ArtDaily shows you a different artwork every day — public-domain paintings
+and prints from The Metropolitan Museum of Art, the Art Institute of
+Chicago, the Cleveland Museum of Art, and the Rijksmuseum.
+
+No ads. No account or sign-in. No tracking. Works offline once the catalog
+is downloaded.
+
+WHAT YOU CAN DO
+
+• Discover a new artwork every day, picked from thousands of paintings and
+  prints across four open-access museum collections.
+• Home screen widget — add several at once, each with its own filters.
+• Filter by period, art movement, artist, or year range.
+• Save your favorite artworks and revisit them anytime.
+• Set any artwork as your wallpaper, manually or with automatic rotation
+  through your favorites.
+• Read each artwork's curatorial description, with on-device translation
+  into other languages (nothing is ever sent to a server).
+• See full artwork details: artist, year, medium, source museum, and
+  license.
+
+ABOUT THE ARTWORKS
+
+Every artwork is public domain or published by its museum under an open
+license (CC0 or CC BY), with attribution shown on its detail page.
+
+PRIVACY
+
+ArtDaily does not collect personal data. Your favorites, history, and
+preferences stay on your phone only. Full privacy policy:
+https://pacohurtadof.github.io/art-daily/

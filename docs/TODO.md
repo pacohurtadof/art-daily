@@ -6,6 +6,28 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
 ## Pendientes abiertos
 
+- [ ] **Publicar en Google Play** (retomado el 2026-09-01, ver `docs/bitacora.md`). Ya
+  resuelto: firma de release, `targetSdk` cumple el requisito 2026, tamaño del APK. Falta:
+  - [x] Política de privacidad pública — publicada en
+    https://pacohurtadof.github.io/art-daily/ (rama `gh-pages`, bilingüe ES/EN).
+  - [ ] Formulario **Data safety** en Play Console — llenar como "no se recopila
+    información" (sin Firebase/Analytics/Ads/Crashlytics, red solo lee imágenes de museos
+    y `delta.json`, traducción 100% on-device — verificado el 2026-09-01).
+  - [ ] Cuestionario de **clasificación de contenido** — el catálogo tiene desnudos
+    artísticos clásicos (Met/AIC), hay que contestarlo en la consola.
+  - [x] **Ficha de la tienda** — armada el 2026-09-01, ver `docs/store-listing/`:
+    ícono 512×512 (`hires_icon_512.png`), feature graphic 1024×500 en ES/EN
+    (`feature_graphic_es.png`/`_en.png`), 6 capturas reales tomadas en el emulador
+    (`screenshots/`: Hoy, Explorar, Detalle, Favoritos, Ajustes, Widget en la pantalla
+    de inicio) y textos ES/EN con los límites de caracteres ya verificados
+    (`listing-es.txt`/`listing-en.txt`). Falta solo pegarlo en la consola.
+  - [ ] **Testing cerrado**: arrancar cuanto antes — mínimo **12 testers** reales
+    (bajó de 20 a 12 en dic. 2024) con opt-in continuo 14 días corridos. Es lo que más
+    tarda en el calendario, conviene arrancarlo en paralelo al resto.
+  - [ ] Subir el `.aab` firmado (`./gradlew :app:bundleRelease`) y considerar si
+    `versionName = "0.1.0-mvp"` debería pasar a algo tipo `1.0.0` para el primer release
+    público (hoy es un detalle cosmético, no bloquea).
+
 - [ ] **Decidir qué hacer con las fotografías documentales/de viaje del siglo XIX del
   Rijksmuseum** (encontrado el 2026-08-28 durante la tanda 35 de movimiento). Su
   `classification_title` real (algo como "photographic print") matchea el substring

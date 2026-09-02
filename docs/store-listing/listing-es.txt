@@ -1,0 +1,40 @@
+TÍTULO (máx. 30):
+ArtDaily
+
+DESCRIPCIÓN CORTA (máx. 80):
+Una obra de arte distinta cada día, en tu pantalla de inicio. Sin anuncios.
+
+DESCRIPCIÓN COMPLETA (máx. 4000):
+ArtDaily te muestra una obra de arte distinta cada día — pinturas y grabados
+de dominio público del Metropolitan Museum of Art, el Art Institute of
+Chicago, el Cleveland Museum of Art y el Rijksmuseum.
+
+Sin anuncios. Sin cuentas ni inicio de sesión. Sin rastreo. Funciona sin
+conexión una vez descargado el catálogo.
+
+QUÉ PUEDÉS HACER
+
+• Descubrir una obra nueva cada día, elegida entre miles de pinturas y
+  grabados de cuatro museos con colecciones de acceso abierto.
+• Widget para tu pantalla de inicio — agregá varios widgets a la vez, cada
+  uno con sus propios filtros.
+• Filtrar por periodo, movimiento artístico, artista o rango de años.
+• Guardar tus obras favoritas y volver a verlas cuando quieras.
+• Usar cualquier obra como fondo de pantalla, a mano o con rotación
+  automática entre tus favoritos.
+• Leer la reseña curatorial de cada obra, con traducción en el dispositivo
+  a otros idiomas (no se envía texto a ningún servidor).
+• Ver los datos de cada obra: artista, año, técnica, museo de origen y
+  licencia.
+
+SOBRE LAS OBRAS
+
+Todas las obras son de dominio público o están publicadas por su museo bajo
+licencia abierta (CC0 o CC BY), con la atribución correspondiente visible en
+cada ficha.
+
+PRIVACIDAD
+
+ArtDaily no recopila datos personales. Tus favoritos, historial y
+preferencias se guardan solo en tu teléfono. Política de privacidad completa:
+https://pacohurtadof.github.io/art-daily/
