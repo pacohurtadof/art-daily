@@ -6,6 +6,9 @@ import com.artdaily.app.domain.selection.FakeArtworkRepository
 import com.artdaily.app.domain.selection.FakeHistoryDao
 import com.artdaily.app.domain.selection.SelectionEngine
 import com.artdaily.core.model.Artwork
+import java.time.Clock
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -80,6 +83,70 @@ class GetArtworkOfTheDayUseCaseTest {
         // Se agregó un registro nuevo de HOY, además del de hace dos días — no se reusó
         // el viejo sin más.
         assertEquals(2, history.getRecentArtworkIds(widgetId = 0, sinceEpochMillis = 0L).size)
+    }
+
+    @Test
+    fun `picks a new artwork right after midnight, even if one was already shown minutes earlier`() = runBlocking {
+        // Regresión del bug sospechado por el usuario (2026-09-01): "el fondo de pantalla no
+        // cambia a medianoche". Antes de este test, `startOfTodayEpochMillis()` usaba el
+        // reloj real del sistema sin forma de inyectarlo — imposible simular cruzar
+        // medianoche sin esperar 24h de verdad en un dispositivo. Con `clock` inyectable
+        // (mismo patrón que `SelectionEngine.random`), se simula: una obra elegida a las
+        // 23:50 de un día, y la llamada siguiente 20 minutos después en tiempo real pero ya
+        // pasada la medianoche (00:10 del día siguiente) — tiene que sortear/registrar una
+        // obra para el día NUEVO, no reusar en silencio la de la noche anterior solo porque
+        // pasaron pocos minutos reales. Esto es justo lo que alimenta el wallpaper cuando
+        // `WallpaperPreferences.source == DAILY_ARTWORK` (`DailyArtworkWorker`, que no se
+        // puede testear en JVM pura por sus dependencias de Android/Glance — este es el
+        // punto real y correcto donde probar la lógica de cruce de medianoche).
+        val repo = FakeArtworkRepository(listOf(artwork("a"), artwork("b")))
+        val history = FakeHistoryDao()
+        val useCase = GetArtworkOfTheDayUseCase(
+            SelectionEngine(repo, history), FakeWidgetConfigDao(), history, repo
+        )
+        val zone = ZoneId.of("America/Argentina/Buenos_Aires")
+
+        useCase.clock = Clock.fixed(
+            LocalDate.of(2026, 9, 1).atTime(23, 50).atZone(zone).toInstant(), zone
+        )
+        val beforeMidnight = useCase(widgetId = 1)
+
+        useCase.clock = Clock.fixed(
+            LocalDate.of(2026, 9, 2).atTime(0, 10).atZone(zone).toInstant(), zone
+        )
+        val afterMidnight = useCase(widgetId = 1)
+
+        assertNotNull(beforeMidnight)
+        assertNotNull(afterMidnight)
+        // Dos registros de historial distintos — uno por día de calendario, aunque entre
+        // las dos llamadas hayan pasado solo 20 minutos de tiempo real/simulado.
+        assertEquals(2, history.getRecentArtworkIds(widgetId = 0, sinceEpochMillis = 0L).size)
+    }
+
+    @Test
+    fun `does not re-roll if called again a minute before midnight, still the same calendar day`() = runBlocking {
+        // El contraste del test anterior: si NO se cruzó medianoche, sigue sin re-sortear
+        // (mismo comportamiento que ya cubre el test "returns the same artwork on a second
+        // call the same day", pero ahora verificado con el reloj fijo en vez del real).
+        val repo = FakeArtworkRepository(listOf(artwork("a"), artwork("b")))
+        val history = FakeHistoryDao()
+        val useCase = GetArtworkOfTheDayUseCase(
+            SelectionEngine(repo, history), FakeWidgetConfigDao(), history, repo
+        )
+        val zone = ZoneId.of("America/Argentina/Buenos_Aires")
+        useCase.clock = Clock.fixed(
+            LocalDate.of(2026, 9, 1).atTime(0, 5).atZone(zone).toInstant(), zone
+        )
+
+        val first = useCase(widgetId = 1)
+
+        useCase.clock = Clock.fixed(
+            LocalDate.of(2026, 9, 1).atTime(23, 55).atZone(zone).toInstant(), zone
+        )
+        val second = useCase(widgetId = 1)
+
+        assertEquals(first?.id, second?.id)
+        assertEquals(1, history.getRecentArtworkIds(widgetId = 0, sinceEpochMillis = 0L).size)
     }
 
     @Test

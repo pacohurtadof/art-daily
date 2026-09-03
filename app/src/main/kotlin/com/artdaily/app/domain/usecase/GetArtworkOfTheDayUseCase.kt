@@ -7,8 +7,8 @@ import com.artdaily.app.domain.selection.SelectionEngine
 import com.artdaily.core.model.Artwork
 import com.artdaily.core.model.ArtworkFilter
 import com.artdaily.core.repository.ArtworkRepository
+import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -25,6 +25,14 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
     private val historyDao: HistoryDao,
     private val artworkRepository: ArtworkRepository
 ) {
+    /** Mutable a propósito, mismo motivo/patrón que `SelectionEngine.random` — un default de
+     * constructor no sirve porque Hilt llama al constructor primario con todos los argumentos
+     * explícitos. En producción siempre queda en `Clock.systemDefaultZone()`; los tests
+     * (`GetArtworkOfTheDayUseCaseTest`) lo pisan con `Clock.fixed(...)` para simular cruzar
+     * la medianoche sin depender del reloj real (2026-09-01, pedido del usuario: sospecha de
+     * un bug real en el cambio de fondo de pantalla a medianoche). */
+    internal var clock: Clock = Clock.systemDefaultZone()
+
     suspend operator fun invoke(widgetId: Int = 0): Artwork? {
         val config = widgetConfigDao.getById(widgetId)
 
@@ -67,7 +75,7 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
         val artwork = selectionEngine.pickForWidget(historyKey, filter, avoidRepeatDays) ?: return null
 
         historyDao.record(
-            HistoryEntity(widgetId = historyKey, artworkId = artwork.id, shownAt = System.currentTimeMillis())
+            HistoryEntity(widgetId = historyKey, artworkId = artwork.id, shownAt = clock.millis())
         )
         return artwork
     }
@@ -77,11 +85,11 @@ class GetArtworkOfTheDayUseCase @Inject constructor(
         const val HOME_HISTORY_KEY = 0
     }
 
-    /** Medianoche local de hoy, en millis — un día de calendario real (zona horaria del
-     * dispositivo), no una ventana móvil de 24h. `LocalDate`/`ZoneId` son nativos desde API
-     * 26 (el `minSdk` del proyecto), no hace falta desugaring. */
+    /** Medianoche local de hoy, en millis — un día de calendario real (zona horaria de
+     * [clock]), no una ventana móvil de 24h. `LocalDate` es nativo desde API 26 (el `minSdk`
+     * del proyecto), no hace falta desugaring. */
     private fun startOfTodayEpochMillis(): Long {
-        val zone = ZoneId.systemDefault()
-        return LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
+        val zone = clock.zone
+        return LocalDate.now(clock).atStartOfDay(zone).toInstant().toEpochMilli()
     }
 }
