@@ -30,8 +30,11 @@ android {
         applicationId = "com.artdaily.app"
         minSdk = 26      // API 26+: buen soporte de Glance/WorkManager sin parches
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0-mvp"
+        // v2 (2026-09-02): primer intento de subida a Play Console consumió el versionCode 1
+        // (con el .aab viejo, de antes del fix crítico de Room — ver docs/bitacora.md). Play
+        // Console no permite reusar un versionCode ya subido, ni siquiera en testing cerrado.
+        versionCode = 2
+        versionName = "0.1.1-mvp"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
