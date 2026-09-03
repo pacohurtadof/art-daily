@@ -96,6 +96,15 @@ private fun Artwork.isEligibleForCatalog(): Boolean {
  * para ellos.
  */
 private val BULK_QUERY_TERMS = listOf(
+    // --- Artistas nuevos no intentados todavía (2026-09-01, pedido del usuario: "siento
+    // que faltan más artistas") — revisada la lista completa de abajo primero para no repetir
+    // nombres ya probados (incluidos los que dieron 0 por derechos de autor vigentes: Klimt,
+    // Schiele, Picasso, Matisse, Chagall, Dalí, Warhol, Kahlo, Mondrian). Puestos PRIMERO en
+    // la lista a propósito — el modo bulk corta apenas alcanza el objetivo, así que conviene
+    // que los términos nuevos se prueben antes de volver a barrer los ~190 ya agotados.
+    "friedrich", "sorolla", "waterhouse", "alma-tadema", "caillebotte", "redon", "signac",
+    "zurbaran", "ribera", "bierstadt", "ruisdael", "de hooch", "jan steen", "zorn",
+    "landseer", "artemisia gentileschi", "poussin", "claude lorrain", "guardi",
     // --- Sujetos/escenas genéricas (lista original, 2026-08-17) ---
     "portrait", "landscape", "still life", "flowers", "river", "mountain",
     "self portrait", "woman", "man", "child", "animals", "garden", "sea", "ship",

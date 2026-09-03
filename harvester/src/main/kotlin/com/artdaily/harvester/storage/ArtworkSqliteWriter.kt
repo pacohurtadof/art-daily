@@ -33,6 +33,7 @@ class ArtworkSqliteWriter(private val dbPath: String) {
             conn.autoCommit = false
             createTable(conn)
             addIconicColumnIfMissing(conn)
+            setSchemaVersion(conn)
 
             // Se lee el estado PREVIO antes de insertar, para poder comparar y saber qué
             // realmente cambió (si se leyera después, ya estaría pisado por el INSERT OR REPLACE).
@@ -145,6 +146,23 @@ class ArtworkSqliteWriter(private val dbPath: String) {
                 if (e.message?.contains("duplicate column", ignoreCase = true) != true) throw e
             }
         }
+    }
+
+    /** Bug real encontrado el 2026-09-02 (ver `docs/bitacora.md`): sin esto, el archivo crudo
+     * que genera este writer arranca en `PRAGMA user_version = 0`. Room, al abrirlo vía
+     * `createFromAsset` (`AppDatabase.version = 4` en `:app`), detecta el mismatch de versión
+     * en CADA apertura del proceso — no solo la primera — y con `fallbackToDestructiveMigration`
+     * activado (`DatabaseModule.kt`), eso significa borrar y reconstruir el esquema cada vez.
+     * Favoritos, historial y cualquier dato guardado en tiempo de uso se perdían en cada
+     * reinicio de la app (reproducido en vivo: force-stop/swipe en Recientes → todo vuelto al
+     * estado del asset empaquetado). Documentado oficialmente por Android — hay que igualar
+     * el `user_version` del archivo al `@Database(version = ...)` de Room:
+     * https://developer.android.com/training/data-storage/room/prepopulate
+     *
+     * `SCHEMA_VERSION` tiene que mantenerse igual a `AppDatabase.version` a mano — no hay forma
+     * de compartir la constante entre `:harvester` (JVM puro) y `:app` sin acoplar los módulos. */
+    private fun setSchemaVersion(conn: Connection) {
+        conn.createStatement().use { it.execute("PRAGMA user_version = $SCHEMA_VERSION") }
     }
 
     /** Trae, de los ids dados, los que ya existían en la tabla — para poder diffear. */
@@ -262,5 +280,10 @@ class ArtworkSqliteWriter(private val dbPath: String) {
 
     private fun java.sql.PreparedStatement.setNullableInt(index: Int, value: Int?) {
         if (value == null) setNull(index, java.sql.Types.INTEGER) else setInt(index, value)
+    }
+
+    private companion object {
+        /** Debe coincidir con `AppDatabase.version` en `:app` — ver `setSchemaVersion`. */
+        const val SCHEMA_VERSION = 4
     }
 }
