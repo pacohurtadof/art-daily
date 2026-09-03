@@ -23,10 +23,33 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
     (`listing-es.txt`/`listing-en.txt`). Falta solo pegarlo en la consola.
   - [ ] **Testing cerrado**: arrancar cuanto antes — mínimo **12 testers** reales
     (bajó de 20 a 12 en dic. 2024) con opt-in continuo 14 días corridos. Es lo que más
-    tarda en el calendario, conviene arrancarlo en paralelo al resto.
-  - [ ] Subir el `.aab` firmado (`./gradlew :app:bundleRelease`) y considerar si
+    tarda en el calendario, conviene arrancarlo en paralelo al resto. Mecánica, mensaje
+    de invitación y planilla de seguimiento en `docs/closed-testing.md`.
+  - [ ] Subir el `.aab` firmado — regenerado el 2026-09-02 con un fix crítico adentro (ver
+    ítem de abajo), en `app/build/outputs/bundle/release/app-release.aab`. **El `.aab` que
+    se había generado antes de esa fecha tenía un bug real (pérdida de datos en cada
+    force-quit) — no usar ese, usar el nuevo.** Considerar también si
     `versionName = "0.1.0-mvp"` debería pasar a algo tipo `1.0.0` para el primer release
-    público (hoy es un detalle cosmético, no bloquea).
+    público (esto sí es solo cosmético, no bloquea).
+
+- [x] ~~Bug real: la app perdía favoritos/historial en cada force-quit~~ — encontrado y
+  arreglado el 2026-09-02 (reportado por el usuario: "la obra del día cambia en cada force
+  quit"). Causa raíz: el `artworks.db` que genera el harvester nunca seteaba `PRAGMA
+  user_version`, así que Room disparaba `fallbackToDestructiveMigration` (borra y
+  reconstruye el esquema) en CADA apertura del proceso, no solo la primera — silencioso,
+  sin crashear. Fix en `ArtworkSqliteWriter.setSchemaVersion()`. Verificado en vivo, dos
+  ciclos seguidos de Recientes→deslizar→reabrir, contra la base real del dispositivo. Ver
+  `docs/bitacora.md` (2026-09-02) para el detalle completo de la investigación.
+
+- [ ] **Evaluar monetización con publicidad** (pregunta del usuario el 2026-09-01 mientras
+  se llenaban las declaraciones de Play Console). Decisión: **publicar la v1 sin
+  anuncios** (ya está todo armado así — ficha de la tienda, declaraciones de Ads/Data
+  safety) y evaluarlo recién en una actualización posterior, para no atrasar esta
+  primera publicación. Si se retoma: implica agregar un SDK (AdMob es lo estándar),
+  pantalla de consentimiento GDPR para la UE, decidir ubicación de los anuncios sin
+  romper la estética minimalista (CLAUDE.md — "la obra es la protagonista"), y
+  actualizar la declaración de Ads/Data safety + la descripción de la tienda (hoy dice
+  "Sin anuncios").
 
 - [ ] **Decidir qué hacer con las fotografías documentales/de viaje del siglo XIX del
   Rijksmuseum** (encontrado el 2026-08-28 durante la tanda 35 de movimiento). Su

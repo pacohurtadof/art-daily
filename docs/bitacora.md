@@ -1,5 +1,61 @@
 # Bitácora — ArtDaily
 
+## 2026-09-02 — Bug real y grave: la app perdía TODOS los datos del usuario en cada force-quit
+
+Pedido del usuario: "cada vez que hago force quit, la obra del día cambia" — y un test que lo
+simule. Investigación completa, de sospecha a causa raíz confirmada:
+
+1. **Se descartó que fuera solo el cruce de medianoche** (la fecha real cambió a 2026-09-02
+   durante esta misma sesión, lo que inicialmente parecía explicarlo). El usuario confirmó:
+   "sí, cambia cada vez que cierro" — pasaba varias veces seguidas el mismo día.
+2. **Repro en vivo en el emulador**, con logs y consultas SQL directas contra
+   `/data/data/com.artdaily.app/databases/artworks.db` (no solo teoría): se probó primero con
+   `adb shell am force-stop` (dio positivo), pero como una sesión anterior ya había anotado que
+   ese comando específico tuvo "efectos secundarios raros" (borró un widget una vez), se repitió
+   con el gesto real — Recientes + deslizar la tarjeta hacia arriba — para descartar que fuera
+   un artefacto de ADB. **Mismo resultado**: confirmado que es un bug real de la app, no del
+   método de cierre.
+3. **Diagnóstico por eliminación**: se puso un favorito (sobrevive a nada), un marcador de texto
+   directo en una fila de `artworks` (tampoco sobrevive), y un archivo `marker.txt` suelto en el
+   mismo directorio (**ese sí sobrevive**, y el inode de `artworks.db` no cambia entre reinicios)
+   — descarta que se esté borrando/recreando el archivo entero; algo lo limpia por dentro, en el
+   mismo archivo, en cada apertura.
+4. **Causa raíz**: `ArtworkSqliteWriter` (harvester) nunca seteaba `PRAGMA user_version` en el
+   `artworks.db` que genera — quedaba en 0 (default de SQLite), mientras `AppDatabase.version = 4`
+   en `:app`. Con `fallbackToDestructiveMigration(true)` (`DatabaseModule.kt`), Room detecta ese
+   mismatch de versión y borra/reconstruye el esquema **en cada apertura del proceso, no solo la
+   primera** — silencioso, sin crashear, así que nadie lo notó hasta ahora. Es un gotcha
+   oficialmente documentado por Android para `createFromAsset`, no una rareza del proyecto:
+   [developer.android.com/training/data-storage/room/prepopulate](https://developer.android.com/training/data-storage/room/prepopulate)
+   ("it is necessary to update the user version pragma... failure to do so will result in the
+   loss of any data inserted while the application is running").
+
+**Fix**: `ArtworkSqliteWriter.setSchemaVersion()` nuevo — `PRAGMA user_version = 4` (constante
+`SCHEMA_VERSION`, tiene que mantenerse igual a `AppDatabase.version` a mano, no hay forma de
+compartirla entre `:harvester` y `:app`) al final de cada `write()`. Aplicado también a mano
+(`sqlite3 ... "PRAGMA user_version = 4;"`) al `artworks.db` ya generado, antes de copiarlo a
+`assets/`.
+
+**Verificado en vivo, dos veces seguidas** (no solo "compila"): favorito agregado + historial
+sobreviven íntegros a Recientes→deslizar→reabrir, dos ciclos consecutivos, contra la base real
+del dispositivo. Suite completa corrida de nuevo tras el fix: 68 tests, 0 fallos.
+`bundleRelease` regenerado con el asset corregido (más los 412 artistas nuevos de la cosecha en
+paralelo, ver entrada de abajo) — el `.aab` viejo (de antes de este fix) **no debe usarse para
+publicar**, tenía este bug adentro.
+
+**De regalo, en la misma cosecha en paralelo**: 412 obras nuevas de 10 artistas no intentados
+antes (Friedrich 162, Jan Steen 99, Redon 81, Ribera 19, Signac 15, Alma-Tadema 13, Ruisdael 12,
+Zurbarán 3, Sorolla 1, Caillebotte 1) — catálogo 10939 → 11351. Se investigaron también 5 fuentes
+nuevas de museos (Louvre, MoMA, Prado, Reina Sofía, Mauritshuis) a pedido del usuario: ninguna es
+una integración simple tipo Met/AIC/CMA/Rijks — Louvre no es CC0 (reuso comercial requiere
+contactar a su agencia de fotos), MoMA es CC0 pero sin imágenes en el dataset, y los otros 3 no
+tienen API de datos abiertos equivalente. Queda anotado como pendiente de fondo, no para ahora.
+
+**También se hizo, antes de este bug** (mismo día): reloj inyectable en
+`GetArtworkOfTheDayUseCase` (`internal var clock`, mismo patrón que `SelectionEngine.random`)
+con 2 tests nuevos que cruzan medianoche de verdad — confirma que esa lógica en particular
+siempre estuvo bien escrita; el bug real estaba en la capa de persistencia, no ahí.
+
 ## 2026-09-01 — Retomando el camino a Play Store: política de privacidad publicada
 
 Se retoma el pendiente del 2026-08-21 ("Pendiente para publicar"). Estado revisado a
