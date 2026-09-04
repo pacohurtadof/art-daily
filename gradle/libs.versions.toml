@@ -36,6 +36,9 @@ androidxHilt = "1.4.0"
 retrofit = "3.0.0"
 okhttp = "4.12.0"
 kotlinxSerialization = "1.9.0"
+# Solo :harvester (ingesta de National Gallery of Art: dataset CSV en GitHub, no una API
+# REST — ver `harvester/nga/`). Verificado contra Maven Central el 2026-09-04.
+commonsCsv = "1.14.1"
 # 1.10.2, no la más reciente (1.11.0): androidx.test:core:1.7.0 trae una restricción interna
 # "strictly 1.10.2" sobre kotlinx-coroutines-bom que fuerza esa versión en tiempo de
 # ejecución sin importar lo que se pida aquí — pedir 1.11.0 causaba NoSuchMethodError en el
@@ -106,6 +109,7 @@ retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", n
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
 
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }

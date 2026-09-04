@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.commons.csv) // ingesta de National Gallery of Art: dataset CSV, no API REST
 
     // SQLite plano (no Room aquí — el harvester genera el .db directamente
     // con el driver JDBC de SQLite, sin necesidad del framework Android)

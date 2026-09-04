@@ -46,6 +46,40 @@ Puntos que importan para no perder tiempo:
 >
 > Eso es todo — gracias!
 
+## 2026-09-04: estrategia elegida — contactos propios + comunidades de intercambio
+
+El usuario no tiene 12 contactos personales a mano para pedirles esto. Google no
+exige que sean conocidos, solo "personas reales, dispositivos reales, cuentas de
+Google genuinas" que opten in y dejen la app instalada — por eso existe un
+ecosistema activo de devs que se ayudan mutuamente a cumplir exactamente este
+trámite (no es hacer trampa: son cuentas y dispositivos genuinos, cumplen la letra
+del requisito). Decisión: mezcla de los dos caminos.
+
+**Dónde postear** (en inglés, son comunidades angloparlantes):
+- Reddit: **r/AndroidBetas** y **r/AlphaAndBetaUsers**
+- Grupos de Telegram/Discord de "Play Store closed testing exchange" (buscar esos
+  términos — rotan con frecuencia, no hay uno fijo para linkear acá)
+- Subforo de beta testing de XDA Developers
+
+### Borrador para esas comunidades (inglés)
+
+> **[Testing] ArtDaily — a new artwork every day, with a home screen widget (Android)**
+>
+> Hey! Working on getting ArtDaily out of closed testing on Google Play and need to
+> hit Google's 12-tester / 14-day requirement. The app shows a different artwork
+> each day (Met, Art Institute of Chicago, Cleveland Museum, Rijksmuseum — all
+> public domain), filterable by period/movement/artist, with a home screen widget.
+> Fully offline-first, no ads, no data collection.
+>
+> Opt-in link: [LINK DE OPT-IN]
+>
+> Just need you to opt in and keep it installed for 14 days — no need to actually
+> use it, though feedback is welcome. Happy to reciprocate on your listing too, just
+> drop your link below or DM me.
+
+Después de postear, conviene anotar acá abajo quién se apunta desde estas fuentes
+(no solo los contactos personales) para no perder la cuenta de cuántos faltan.
+
 ## Planilla de seguimiento
 
 Completar a medida que cada uno confirma. "Día 14" = fecha de opt-in + 14 días; ahí

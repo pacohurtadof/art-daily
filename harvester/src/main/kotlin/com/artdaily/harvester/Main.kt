@@ -9,6 +9,7 @@ import com.artdaily.harvester.cma.CmaMapper
 import com.artdaily.harvester.met.MetApi
 import com.artdaily.harvester.met.MetMapper
 import com.artdaily.harvester.network.HttpClientFactory
+import com.artdaily.harvester.nga.NgaCsvIngester
 import com.artdaily.harvester.rijks.RijksApi
 import com.artdaily.harvester.rijks.RijksMapper
 import com.artdaily.harvester.storage.ArtworkSqliteWriter
@@ -154,11 +155,22 @@ fun main(args: Array<String>) = runBlocking {
         return@runBlocking
     }
 
+    if (args.getOrNull(0) == "nga") {
+        // A diferencia de "bulk", no hay término de búsqueda que iterar — NGA es un dataset
+        // CSV completo (ver NgaCsvIngester), así que "target" corta por rankScore en vez de
+        // agotar una lista de términos.
+        val target = args.getOrNull(1)?.toIntOrNull() ?: 3000
+        val dbPath = args.getOrNull(2) ?: "output/artworks.db"
+        runNgaHarvest(target, dbPath)
+        return@runBlocking
+    }
+
     val query = args.getOrNull(0) ?: "landscape"
     val dbPath = args.getOrNull(1) ?: "output/artworks.db"
 
     val allMapped = (harvestMet(query) + harvestAic(query) + harvestCma(query) + harvestRijks(query))
         .map { MovementOverrides.apply(it) }
+        .map { PeriodOverrides.apply(it) }
         .map { IconicOverrides.apply(it) }
     // El listado en consola muestra TODO lo mapeado (sirve para inspeccionar qué hay,
     // incluidas cosas que no vamos a guardar) — lo que se persiste en `saveAndReportDelta`
@@ -209,6 +221,7 @@ private suspend fun runBulkHarvest(target: Int, dbPath: String) {
         println("\n--- [${index + 1}/${BULK_QUERY_TERMS.size}] término: \"$term\" (acumulado: $totalNewOrChanged/$target) ---")
         val allMapped = (harvestMet(term) + harvestAic(term) + harvestCma(term) + harvestRijks(term))
             .map { MovementOverrides.apply(it) }
+        .map { PeriodOverrides.apply(it) }
         .map { IconicOverrides.apply(it) }
         // Solo se escribe (y solo cuenta para el objetivo) lo elegible para el catálogo real
         // (painting/print, año >= 740 o desconocido) — ver `isEligibleForCatalog`. El resto se
@@ -237,6 +250,36 @@ private suspend fun runBulkHarvest(target: Int, dbPath: String) {
     } else {
         println("Delta: nada nuevo/cambiado, no se generó archivo.")
     }
+}
+
+/**
+ * Cosecha National Gallery of Art (Washington) — ver [NgaCsvIngester]. Descarga (o reusa del
+ * caché local) el dataset CSV completo, lo une, y mapea. `target` corta por [Artwork.rankScore]
+ * descendente igual que el resto del catálogo prioriza obras con metadatos más completos —
+ * no hay concepto de "término de búsqueda agotado" como en el modo bulk.
+ */
+private suspend fun runNgaHarvest(target: Int, dbPath: String) {
+    println("=== Cosecha NGA (National Gallery of Art): objetivo $target obras ===")
+
+    val cacheDir = File(File(dbPath).absoluteFile.parentFile ?: File("output"), "nga-cache")
+    val rawArtworks = NgaCsvIngester(cacheDir).ingest()
+        .map { it.copy(rankScore = RankScoreCalculator.calculate(it)) }
+        .map { MovementOverrides.apply(it) }
+        .map { PeriodOverrides.apply(it) }
+        .map { IconicOverrides.apply(it) }
+
+    val eligible = rawArtworks.filter { it.isEligibleForCatalog() }
+    println(
+        "[nga] ${rawArtworks.size} mapeadas, ${eligible.size} elegibles para el catálogo " +
+            "(año >= $MIN_ELIGIBLE_YEAR o desconocido, sin bocetos/estudios)."
+    )
+
+    val toWrite = eligible.sortedByDescending { it.rankScore }.take(target)
+    if (toWrite.size < eligible.size) {
+        println("Cortado a $target por rankScore (había ${eligible.size} disponibles — volvé a correr con un target mayor para traer más).")
+    }
+
+    saveAndReportDelta(toWrite, dbPath)
 }
 
 private fun saveAndReportDelta(artworks: List<Artwork>, dbPath: String) {

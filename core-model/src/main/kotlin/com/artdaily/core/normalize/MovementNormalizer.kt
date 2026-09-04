@@ -58,7 +58,44 @@ object MovementNormalizer {
         "nabis" to "Nabis",
         "precisionism" to "Precisionismo",
         "orientalism" to "Orientalismo",
-        "ashcan school" to "Escuela Ashcan"
+        "orientalist" to "Orientalismo",
+        "ashcan school" to "Escuela Ashcan",
+        // Agregados el 2026-09-04, al investigar la National Gallery of Art (Washington)
+        // como fuente nueva: su tabla `objects_terms` (termType="Style") trae los mismos
+        // movimientos pero casi siempre en la forma adjetiva "-ist"/"-ive", no "-ism" —
+        // confirmado descargando `objects_terms.csv` real y contando valores (ver
+        // `docs/bitacora.md`). Sin estos alias, ninguna obra de NGA con Style="Impressionist"
+        // hubiera matcheado el diccionario existente (que solo tenía "impressionism").
+        "impressionist" to "Impresionismo",
+        "post-impressionist" to "Postimpresionismo",
+        "realist" to "Realismo",
+        "expressionist" to "Expresionismo",
+        "abstract expressionist" to "Expresionismo abstracto",
+        "surrealist" to "Surrealismo",
+        "cubist" to "Cubismo",
+        "symbolist" to "Simbolismo",
+        "fauve" to "Fauvismo",
+        "futurist" to "Futurismo",
+        "modernist" to "Modernismo",
+        "tonalist" to "Tonalismo",
+        "minimalist" to "Minimalismo",
+        "neoclassic" to "Neoclasicismo",
+        "pop" to "Pop art", // NGA da el Style pelado "Pop", no "Pop Art" como AIC
+        "naive" to "Arte naïf", // movimiento real (ver Naïve art / Art Naïf), no estaba cubierto
+        "neo-impressionism" to "Neoimpresionismo", // distinto de Impresionismo (puntillismo/divisionismo, post-1885) — no reusar "Impresionismo"
+        "neo-impressionist" to "Neoimpresionismo",
+        // Agregado el 2026-09-04, al clasificar a mano las obras de NGA sin periodo ni
+        // movimiento (ver `harvester/data/movement-overrides.csv`): término real y
+        // reconocido (infobox de Wikipedia de varios artistas, ej. Modigliani), aunque más
+        // amplio que el resto del diccionario — agrupa por ciudad/época (París,
+        // ~1900-1940), no por un estilo único (adentro conviven Cubismo, Fauvismo,
+        // Expresionismo...). Decisión del usuario: agregarlo igual.
+        "school of paris" to "Escuela de París",
+        "école de paris" to "Escuela de París",
+        // Mismo criterio que Hudson River School/Barbizon/Ashcan (ya en el diccionario):
+        // escuela regional de paisajistas real y reconocida (John Crome et al., Norwich,
+        // Inglaterra, principios del s. XIX).
+        "norwich school" to "Escuela de Norwich"
         // se amplía con cada fuente nueva que se incorpore
     )
 

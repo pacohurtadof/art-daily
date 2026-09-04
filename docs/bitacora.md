@@ -1,5 +1,243 @@
 # Bitácora — ArtDaily
 
+## 2026-09-04 (continuación 4) — Clasificación manual obra por obra de las 698 sin periodo ni movimiento (vía Wikipedia)
+
+Pedido del usuario tras la corrección de arriba: "para los que no tienen movimiento, vamos de
+una por una a asignarlo, ¿puedes buscarlo en Wikipedia?". Mismo mecanismo ya usado en las 47
+tandas anteriores (`movement-overrides.csv`), pero esta vez la investigación la hizo Claude
+directo contra Wikipedia real (`WebFetch`), no el usuario a mano.
+
+**Mecanismo nuevo: `PeriodOverrides`** — hasta ahora solo existía override manual para
+`movement`, no para `period`. Apareció la necesidad enseguida: varios artistas (ej. Thomas
+Gainsborough) tienen "Movement: Rococo" en su infobox de Wikipedia, pero Rococó es *periodo*
+en este proyecto, no movimiento — sin mecanismo, esa información no tenía dónde ir. Creado
+`harvester/PeriodOverrides.kt` (mismo patrón que `MovementOverrides.kt`) +
+`harvester/data/period-overrides.csv`, enganchado en los 3 modos de `Main.kt`.
+
+**Metodología** (acordada con el usuario antes de arrancar, vía 3 preguntas):
+1. **Alcance**: no las 1.649 obras sin movimiento — solo las **698 sin movimiento NI periodo**
+   (las otras 951 son maestros de Barroco/Renacimiento correctamente sin movimiento, por
+   diseño del proyecto — no es trabajo pendiente).
+2. **Criterio de match**: cualquier mención real en Wikipedia cuenta (no hace falta que sea la
+   línea formal "Movement:" del infobox) — pero con juicio: se descartaron varias menciones
+   por ser demasiado débiles o directamente contradictorias (ver ejemplos abajo).
+3. **Términos nuevos**: agregar al diccionario cuando sea un término real y reconocido, aunque
+   más amplio que el resto (se agregaron "Escuela de París"/"École de Paris" y, después,
+   "Escuela de Norwich", mismo patrón que Hudson River School/Barbizon/Ashcan ya existentes).
+
+**Por artista, no por obra, PERO aplicado obra por obra**: se investigó cada uno de los 180
+artistas distintos en Wikipedia (`en.wikipedia.org/wiki/<Nombre>`, casi siempre buscando la
+línea "Movement:" del infobox), pero el resultado se aplicó **por obra individual**, cruzando
+con el año de cada obra puntual contra la carrera del artista — varias veces esto importó de
+verdad:
+- **Daniel Huntington**: "belonged to Hudson River School EARLY in his career, later shifted
+  to portraiture" — sus 3 obras en el catálogo son retratos de 1857-1866 (fase tardía) → se
+  dejaron en `null`, no se le puso Hudson River School.
+- **Félix Vallotton**: perteneció a los Nabis en los 1890s, pero sus 3 obras son de
+  1910-1924 (después de dejar el grupo) → `null`.
+- **Alexander Helwig Wyant**: "empezó en Hudson River School, evolucionó a Tonalism" tras una
+  crisis de salud de 1873 → su única obra es de 1872 (antes del cambio) → Hudson River School,
+  no Tonalism.
+- **Martin Johnson Heade**: "Movement: Hudson River School; Luminism" en el infobox, pero sus
+  3 obras son naturalezas muertas de flores — el Luminismo de Heade es específicamente sobre
+  sus paisajes costeros/marismas, no naturalezas muertas → se dejaron en `null` por
+  desajuste de género, pese al match nominal del artista.
+- **George Henry Hall / Jean-Léon Gérôme / John Greenwood**: casos donde el infobox decía algo
+  técnicamente cierto pero engañoso en contexto (Gérôme "Orientalism" no aplica a un retrato
+  puntual sin tema orientalista; Greenwood tiene "Movement: Realism" en su infobox pese a
+  haber muerto en 1792, medio siglo antes de que ese movimiento existiera — se trató como
+  probable etiqueta suelta de Wikipedia, no un dato confiable, y se dejó en `null`).
+
+**Lección técnica**: la síntesis de `WebSearch` no siempre refleja lo que dice realmente
+Wikipedia — se encontró al menos un caso real (George Romney) donde `WebSearch` afirmó
+"Movement: Neoclassicism and Romanticism" citando aparentemente una fuente de baja calidad, y
+`WebFetch` directo contra `en.wikipedia.org` mostró que el artículo real no menciona ningún
+movimiento. Desde ahí, todo el resto de la sesión se verificó con `WebFetch` directo al
+artículo de Wikipedia, nunca solo con la síntesis de `WebSearch`.
+
+**Resultado final** (verificado contra la base real, no estimado):
+
+| | Antes de esta tanda | Después |
+|---|---|---|
+| NGA con movimiento | 1.234 | 1.320 (+86) |
+| NGA con periodo | 951 | 984 (+33) |
+| NGA sin ninguno | 698 | **579** |
+
+119 obras resueltas de las 698 (el resto de los +86/+33 son overlaps de obras que ya tenían
+uno de los dos). De los 180 artistas revisados, la gran mayoría (~120) confirmó
+correctamente que NO tiene movimiento real documentado — no es trabajo pendiente, es la
+respuesta correcta tras la investigación real (ej. George Catlin solo, 346 obras — el
+retratista etnográfico más grande del lote — no tiene movimiento formal en absoluto).
+
+`harvester/output/artworks.db` y `app/src/main/assets/artworks.db` regenerados (10MB, sin
+crecer casi nada — los overrides son solo texto en columnas ya existentes). Suite completa
+(`core-model`, `harvester`, `app`) en verde después del cambio.
+
+Quedan 579 obras de NGA sin periodo ni movimiento, casi todas de artistas ya investigados y
+confirmados sin movimiento real documentado (o donde el match encontrado no aplicaba a esa
+obra puntual por desajuste de fecha/género) — no es una cola pendiente de la misma manera que
+las 698 originales, es el resultado ya depurado.
+
+## 2026-09-04 (continuación 3) — Corrección: NGA se deja solo en paintings, no prints
+
+Justo después de la entrada de abajo (ingesta completa de NGA, 30.340 obras painting+print),
+el usuario preguntó por el estado real de la clasificación de periodo/movimiento — "recuerda
+que eso es primordial para la app". Buena pregunta: el 37% de cobertura que se había
+reportado en el chat venía de una muestra sesgada (las primeras 5000 obras ordenadas por
+`rankScore`, que por fórmula ya favorece tener movimiento/periodo asignado) — con las 30.340
+completas ya en la base, el número real global caía a 14.6%.
+
+Desglosando por `classification` (`sourceApi='nga'`) salió la causa real:
+
+| classification | total  | con movement | con period |
+|---|---|---|---|
+| painting | 2.883 | 1.234 (43%) | 951 (33%) |
+| print | 27.457 | 603 (2%) | 3 (0.01%) |
+
+Los prints son el 90% del volumen agregado y NGA prácticamente no los tiene curados en
+`objects_terms` (termType Style) — al parecer ese campo se llena sobre todo para la colección
+de pinturas, no para el fondo de grabados/Index of American Design. Las paintings, en cambio,
+salieron MEJOR clasificadas automáticamente que el resto del catálogo (43% vs. 29% que costó
+47 tandas de trabajo manual).
+
+Se le presentaron las 3 opciones al usuario (solo paintings / paintings + los 603 prints ya
+clasificados / dejar todo y clasificar después) — eligió **solo paintings**. Cambios:
+
+- `NgaCsvIngester.eligibleClassifications` — nuevo parámetro del constructor (antes constante
+  fija `setOf("painting", "print")`), default `setOf("painting")`. Documentado en el KDoc de
+  la clase por qué, con los números reales, para que quede el razonamiento y no solo la
+  decisión.
+- Se borraron las 30.340 filas `nga` de `harvester/output/artworks.db` (`DELETE FROM artworks
+  WHERE sourceApi='nga'`) y se volvió a correr `nga 5000 output/artworks.db` — esta vez solo
+  2.883 (paintings), usando la caché local de los CSV (2 segundos, no hubo que rebajar nada).
+- **`VACUUM` después del `DELETE`** — SQLite no devuelve el espacio de páginas borradas al
+  archivo solo, se necesita `VACUUM` explícito. Sin este paso el `.db` hubiera quedado en
+  ~27MB (páginas vacías reusables pero no liberadas) en vez de los ~10.7MB reales con el
+  contenido final — un detalle que se pudo haber colado fácil al empaquetar el asset.
+- `app/src/main/assets/artworks.db` recopiado tras el `VACUUM`.
+
+**Catálogo final real: 11.351 → 14.234 obras** (2.883 de NGA, todas paintings). Cobertura
+global de periodo/movimiento: **38.5%** — mejora de verdad respecto al 29% previo, no una
+regresión disfrazada de crecimiento. `PRAGMA user_version` confirmado en 4 después del
+`VACUUM` (no lo resetea). `CLAUDE.md`/`docs/TODO.md` actualizados con los números corregidos
+antes de que nadie llegara a publicar el release viejo (30.340) por error.
+
+## 2026-09-04 (continuación) — National Gallery of Art integrada: 5ta fuente, catálogo 11.351 → 41.691 (corregido después — ver la entrada de arriba)
+
+Pedido del usuario: ampliar el catálogo de obras. Retomando la ronda de investigación de
+fuentes de la entrada anterior (mismo día): de las 3 candidatas nuevas (Smithsonian, NGA,
+Getty), el usuario eligió NGA para integrar ya, por ser la más prometedora (CC0 total, sin
+API key). Investigación real (no de memoria) descargando los CSV del dataset completo:
+
+**Estructura del dataset** (`github.com/NationalGalleryOfArt/opendata`, `documentation/Data
+Dictionary.txt`): 15 tablas CSV, ~235MB en total entre las 5 que hacen falta para esta app.
+Hallazgo importante de licencia, citado del propio diccionario: *"while links to images...
+are being released under CC0... the NGA's Open Access Policy applies to only a subset of the
+images"* — el filtro real no es "está en el dataset" sino `published_images.openaccess == 1`
+(confirmado contando filas reales: 69.073 de 129.378 filas de imagen). Sin este detalle se
+hubieran ingerido miles de obras con imagen no-comercial por error.
+
+**Verificado en vivo, no asumido**:
+- IIIF real (`iiifurl` + `/full/843,/0/default.jpg`, mismo patrón que AIC) — probado con
+  `curl`, 200 OK, imagen real de vuelta (a diferencia de `www.nga.gov` en sí, que sí da el
+  mismo challenge de Cloudflare "Just a moment..." que ya se documentó como falso-positivo
+  para AIC el 2026-08-31 — no bloquea nada real, solo a `curl` sin motor JS).
+- 30.505 obras `painting`/`print` con imagen open-access (de 63.584 objetos con imagen
+  open-access en total, de 129.378 filas de imagen).
+- `objects_text_entries.csv` NO tiene ninguna fila `brief_narrative` en este export (0 de
+  266.627 filas) — no hay reseña curatorial limpia disponible, a diferencia de CMA/AIC/Rijks;
+  `description` queda `null` siempre para esta fuente.
+- `objects_terms` (termType="Style") SÍ da movimiento/periodo real, pero casi siempre en
+  forma adjetiva "-ist"/"-ive" ("Impressionist", "Realist", "Post-Impressionist"), no la
+  forma "-ism" que ya tenía el diccionario de `MovementNormalizer` — sin agregar alias,
+  ninguna obra de NGA hubiera matcheado. Se agregaron ~18 entradas nuevas (impressionist,
+  post-impressionist, realist, expressionist, abstract expressionist, surrealist, cubist,
+  symbolist, fauve, futurist, orientalist, modernist, tonalist, minimalist, neoclassic, pop,
+  naive, neo-impressionist/neo-impressionism — este último como movimiento NUEVO y distinto,
+  no fusionado con "Impresionismo": es puntillismo/divisionismo post-1885, art-históricamente
+  otra cosa). "Baroque"/"Renaissance"/"Gothic"/"Rococo" también aparecen en `Style` pero son
+  periodo, no movimiento — ya cubiertos sin cambios por `PeriodNormalizer`. `termType="School"`
+  es nacionalidad/escuela de origen ("Dutch", "American"), no movimiento — se usa como
+  candidato de `country`, nunca de movimiento (para no repetir el error ya corregido en AIC
+  de usar una categoría curatorial como si fuera estilo).
+- `attribution` de `objects.csv` ya es un nombre de artista listo para mostrar, sin parsear
+  nada — mismo patrón que `CmaMapper` con `creators.description`.
+
+**Implementación** (`harvester/nga/`, `commons-csv:1.14.1` agregado como dependencia nueva
+solo de `:harvester` — verificado contra Maven Central, no asumido de memoria):
+- `NgaRecord.kt` — registro ya unido, plano y testeable sin parsear CSV de verdad.
+- `NgaMapper.kt` — DTO→`Artwork`, mismo patrón que Met/AIC/CMA/Rijks, con tests reales
+  contra un caso verificado en vivo (Vermeer, "Girl with the Red Hat", objectID 60).
+- `NgaCsvIngester.kt` — a diferencia de las otras 4 fuentes (búsqueda REST por término), acá
+  no hay concepto de query: se descarga (con caché local, ~235MB, no tiene sentido re-bajarlo
+  cada corrida) y se unen 5 tablas por streaming — nunca las 5 completas en memoria a la vez,
+  se restringe a los ~30.500 objectID candidatos apenas se conocen (imagen open-access +
+  classification painting/print) antes de indexar `objects_terms`/`objects_constituents`.
+- `Main.kt` — nuevo modo `nga` (`./gradlew :harvester:run --args="nga <target> <dbPath>"`),
+  mismo `isEligibleForCatalog()`/`ArtworkSqliteWriter`/`DeltaJsonWriter` que el resto, corta
+  por `rankScore` descendente en vez de agotar una lista de términos.
+
+**Corrida real completa** (target 40.000, para traer todo lo elegible): 30.505 mapeadas,
+30.340 elegibles (año ≥ 740 o desconocido, sin bocetos/estudios — el filtro de bocetos casi no
+tocó nada acá, 165 de 30.505). De muestra, 37% salió con `movement` automático sin ninguna
+curaduría manual (contra el 29% que costó ~47 tandas de trabajo manual lograr para las otras 4
+fuentes combinadas) — la mejor cobertura automática de las 5 fuentes hasta ahora. Catálogo:
+**11.351 → 41.691 obras** (`nga`: 30.340, `cma`: 5.004, `rijks`: 3.824, `aic`: 1.808,
+`met`: 715). `harvester/output/artworks.db`: 27MB (de 10.9MB). `PRAGMA user_version` seguía
+en 4 tras la escritura — confirma que el fix crítico del 2026-09-02 sigue aplicando bien.
+Copiado a `app/src/main/assets/artworks.db`. Suite completa (`./gradlew test`, incluye
+`:app`) corrida de nuevo tras el cambio: sigue en verde.
+
+**Encontradas obras realmente icónicas en el lote**: "Girl with the Red Hat" de Vermeer,
+más Cassatt, Degas, Fra Angelico, Masaccio, Duccio — vale la pena una pasada futura de
+`iconic-overrides.txt` sobre este lote nuevo (no se hizo en esta sesión, es trabajo manual
+aparte, mismo mecanismo ya usado para las otras 4 fuentes).
+
+**Pendiente, no bloqueante**: publicar el release nuevo en GitHub
+(`harvester/publish-release.sh`) para que los dispositivos ya instalados reciban el catálogo
+ampliado por sync — sin eso, solo una instalación limpia nueva lo tiene. El `.aab` ya subido
+a Play Console (versionCode 10, testing cerrado en curso) quedó con el catálogo viejo. Ver
+`docs/TODO.md`.
+
+## 2026-09-04 — Testing cerrado arrancado + ronda de investigación de fuentes nuevas
+
+**Testing cerrado**: el usuario ya subió el `.aab` (versionCode 10) y publicó el release a
+la pista de closed testing — confirmado en vivo en el dashboard de Play Console ("Apply
+for access to production" mostrando el checklist de 12 testers / 14 días). Se armó la
+estrategia para juntar los 12: mezcla de contactos propios + comunidades de intercambio,
+documentada en `docs/closed-testing.md`:
+- Mensaje en español para contactos personales (ya existía).
+- Mensaje nuevo en inglés para postear en comunidades de intercambio de testers.
+- **r/AlphaAndBetaUsers** confirmado como subreddit real y activo para esto (~39k
+  miembros). Ojo: se mencionó primero "r/AndroidBetas" de memoria y no se pudo verificar
+  que exista — no usarlo, se corrigió en la conversación.
+- Aclarado: el reloj de 14 días es **por persona** (arranca en su propio opt-in, no
+  cuando se completan los 12) — conviene invitar de a poco a medida que se consigue
+  gente, no esperar a juntar la lista completa antes de mandar el link.
+- Aclarado qué cuenta como "1 tester": opt-in + instalar + dejarla instalada 14 días
+  corridos sin desinstalar/opt-out — no hace falta que la usen ni den feedback.
+
+**Ronda de investigación de fuentes nuevas de museos** (a pedido del usuario, repasando
+una por una): resultado completo anotado en `docs/TODO.md` (sección "Evaluar agregar
+nuevas fuentes de museos"). Resumen:
+- **Smithsonian Institution** — candidato prometedor: 2.8M objetos CC0 (2020), requiere
+  API key gratuita (`api.data.gov`). Son 19 museos, la mayoría no son de arte — habría
+  que filtrar a SAAM/National Portrait Gallery/Freer|Sackler/Hirshhorn/Cooper Hewitt.
+- **National Gallery of Art (Washington)** — el más prometedor: CC0 total sin API key,
+  +130.000 obras, dataset publicado como CSV en GitHub actualizado a diario
+  (`github.com/NationalGalleryOfArt/opendata`).
+- **Getty Museum** — licencia CC0 perfecta, pero API en JSON-LD/Linked Art (RDF/SPARQL)
+  — mismo patrón de complejidad que tuvo Rijksmuseum antes de encontrar su atajo
+  `edm-framed`. No se confirmó si existe un atajo equivalente.
+- **Fitzwilliam Museum** — descartado: imágenes CC-BY-NC-SA/CC-BY-NC-ND (no comercial),
+  mismo motivo que Harvard. Anotado en `CLAUDE.md`.
+- **Wikimedia Commons, Europeana, Harvard** — se confirmó que ya estaban evaluadas y
+  descartadas de antes (el usuario preguntó por cada una para repasar el panorama
+  completo, no eran fuentes nuevas).
+
+Todo quedó solo investigado, nada integrado — son candidatos para una futura sesión si
+el usuario decide avanzar con alguno.
+
 ## 2026-09-02 — Bug real y grave: la app perdía TODOS los datos del usuario en cada force-quit
 
 Pedido del usuario: "cada vez que hago force quit, la obra del día cambia" — y un test que lo

@@ -91,4 +91,44 @@ class MovementNormalizerTest {
         assertEquals("Romanticismo", MovementNormalizer.normalize("romantic"))
         assertEquals("Romanticismo", MovementNormalizer.normalize("nineteenth century, 19th century, romantic"))
     }
+
+    @Test
+    fun `matches the adjective -ist forms found live in NGA Style terms on 2026-09-04`() {
+        // NGA (`objects_terms.csv`, termType="Style") da casi siempre la forma "-ist"/"-ive",
+        // no "-ism" — descargado y contado en vivo, no una suposición. Sin estos alias,
+        // ninguna obra de esta fuente hubiera matcheado el diccionario ya existente.
+        assertEquals("Impresionismo", MovementNormalizer.normalize("Impressionist"))
+        assertEquals("Postimpresionismo", MovementNormalizer.normalize("Post-Impressionist"))
+        assertEquals("Realismo", MovementNormalizer.normalize("Realist"))
+        assertEquals("Expresionismo", MovementNormalizer.normalize("Expressionist"))
+        assertEquals("Expresionismo abstracto", MovementNormalizer.normalize("Abstract Expressionist"))
+        assertEquals("Expresionismo", MovementNormalizer.normalize("German Expressionist"))
+        assertEquals("Surrealismo", MovementNormalizer.normalize("Surrealist"))
+        assertEquals("Cubismo", MovementNormalizer.normalize("Cubist"))
+        assertEquals("Simbolismo", MovementNormalizer.normalize("Symbolist"))
+        assertEquals("Fauvismo", MovementNormalizer.normalize("Fauve"))
+        assertEquals("Futurismo", MovementNormalizer.normalize("Futurist"))
+        assertEquals("Modernismo", MovementNormalizer.normalize("Modernist"))
+        assertEquals("Tonalismo", MovementNormalizer.normalize("Tonalist"))
+        assertEquals("Minimalismo", MovementNormalizer.normalize("Minimalist"))
+        assertEquals("Neoclasicismo", MovementNormalizer.normalize("Neoclassic"))
+        assertEquals("Pop art", MovementNormalizer.normalize("Pop"))
+        assertEquals("Arte naïf", MovementNormalizer.normalize("Naive"))
+        assertEquals("Neoimpresionismo", MovementNormalizer.normalize("Neo-Impressionist"))
+    }
+
+    @Test
+    fun `Neo-Impressionism is kept distinct from Impressionism, not merged into it`() {
+        // Movimiento art-históricamente distinto (puntillismo/divisionismo, post-1885,
+        // Seurat/Signac) — reusar "Impresionismo" hubiera sido una clasificación incorrecta.
+        assertEquals("Neoimpresionismo", MovementNormalizer.normalize("Neo-Impressionism"))
+    }
+
+    @Test
+    fun `matches School of Paris, added while classifying NGA works by hand on 2026-09-04`() {
+        // Verificado en vivo contra el infobox de Wikipedia de Modigliani ("Movement: School
+        // of Paris") — término real aunque más amplio que el resto del diccionario.
+        assertEquals("Escuela de París", MovementNormalizer.normalize("School of Paris"))
+        assertEquals("Escuela de París", MovementNormalizer.normalize("École de Paris"))
+    }
 }
