@@ -34,6 +34,8 @@ object PeriodNormalizer {
         "roman" to "Antigua Roma",
         "edo period" to "Periodo Edo",
         "meiji period" to "Periodo Meiji",
+        "song dynasty" to "Dinastía Song",
+        "yuan dynasty" to "Dinastía Yuan",
         "ming dynasty" to "Dinastía Ming",
         "qing dynasty" to "Dinastía Qing",
         "modern" to "Arte moderno",

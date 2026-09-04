@@ -12,6 +12,8 @@ import com.artdaily.harvester.network.HttpClientFactory
 import com.artdaily.harvester.nga.NgaCsvIngester
 import com.artdaily.harvester.rijks.RijksApi
 import com.artdaily.harvester.rijks.RijksMapper
+import com.artdaily.harvester.smithsonian.SmithsonianApi
+import com.artdaily.harvester.smithsonian.SmithsonianIngester
 import com.artdaily.harvester.storage.ArtworkSqliteWriter
 import com.artdaily.harvester.storage.DeltaJsonWriter
 import kotlinx.coroutines.delay
@@ -22,6 +24,7 @@ private const val MET_BASE_URL = "https://collectionapi.metmuseum.org/"
 private const val AIC_BASE_URL = "https://api.artic.edu/"
 private const val CMA_BASE_URL = "https://openaccess-api.clevelandart.org/"
 private const val RIJKS_BASE_URL = "https://data.rijksmuseum.nl/"
+private const val SMITHSONIAN_BASE_URL = "https://api.si.edu/"
 private const val BATCH_SIZE = 150 // por consulta, por fuente — 2026-08-25: subido de 100 a 150 (se probó 250 y disparó un bloqueo temporal de Incapsula/WAF en Met, ver docs/bitacora.md) para la cosecha de ~10.000 obras
 
 // 2026-08-27: bug real encontrado — AIC SÍ tiene un tope real de `limit` (100), a diferencia
@@ -155,6 +158,13 @@ fun main(args: Array<String>) = runBlocking {
         return@runBlocking
     }
 
+    if (args.getOrNull(0) == "si") {
+        val target = args.getOrNull(1)?.toIntOrNull()
+        val dbPath = args.getOrNull(2) ?: "output/artworks.db"
+        runSmithsonianHarvest(target, dbPath)
+        return@runBlocking
+    }
+
     if (args.getOrNull(0) == "nga") {
         // A diferencia de "bulk", no hay término de búsqueda que iterar — NGA es un dataset
         // CSV completo (ver NgaCsvIngester), así que "target" corta por rankScore en vez de
@@ -277,6 +287,40 @@ private suspend fun runNgaHarvest(target: Int, dbPath: String) {
     val toWrite = eligible.sortedByDescending { it.rankScore }.take(target)
     if (toWrite.size < eligible.size) {
         println("Cortado a $target por rankScore (había ${eligible.size} disponibles — volvé a correr con un target mayor para traer más).")
+    }
+
+    saveAndReportDelta(toWrite, dbPath)
+}
+
+/**
+ * Cosecha Smithsonian — ver [SmithsonianIngester]. `target` corta por [Artwork.rankScore]
+ * igual que `nga`; null trae todo lo elegible (~6.300 candidatas de las 5 unidades de arte,
+ * ver docs/bitacora.md).
+ */
+private suspend fun runSmithsonianHarvest(target: Int?, dbPath: String) {
+    println("=== Cosecha Smithsonian (SAAM/NPG/NMAA/CHNDM/HMSG, solo paintings) ===")
+
+    val apiKey = EnvConfig.require("SMITHSONIAN_API_KEY")
+    val api = HttpClientFactory.retrofit(SMITHSONIAN_BASE_URL).create(SmithsonianApi::class.java)
+    val rawArtworks = SmithsonianIngester(api, apiKey).ingest()
+        .map { it.copy(rankScore = RankScoreCalculator.calculate(it)) }
+        .map { MovementOverrides.apply(it) }
+        .map { PeriodOverrides.apply(it) }
+        .map { IconicOverrides.apply(it) }
+
+    val eligible = rawArtworks.filter { it.isEligibleForCatalog() }
+    println(
+        "[si] ${rawArtworks.size} mapeadas, ${eligible.size} elegibles para el catálogo " +
+            "(año >= $MIN_ELIGIBLE_YEAR o desconocido, sin bocetos/estudios)."
+    )
+
+    val toWrite = if (target != null) {
+        eligible.sortedByDescending { it.rankScore }.take(target)
+    } else {
+        eligible
+    }
+    if (target != null && toWrite.size < eligible.size) {
+        println("Cortado a $target por rankScore (había ${eligible.size} disponibles).")
     }
 
     saveAndReportDelta(toWrite, dbPath)

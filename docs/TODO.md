@@ -6,19 +6,24 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
 ## Pendientes abiertos
 
-- [ ] **Publicar el release de datos con National Gallery of Art en GitHub** (integrada
-  el 2026-09-04, ver `CLAUDE.md` punto 16 y `docs/bitacora.md`). `harvester/output/artworks.db`
-  y `app/src/main/assets/artworks.db` YA están actualizados (14.234 obras — solo
-  paintings de NGA, no prints, ver nota de por qué en `CLAUDE.md`) — falta correr
-  `harvester/publish-release.sh` (requiere `gh` autenticado) para que los dispositivos
-  ya instalados lo reciban por sync automático; sin publicar, solo una instalación limpia
-  nueva (que reempaqueta el `.aab`) tiene el catálogo ampliado. El
-  `artworks-delta-20260904.json` que va a levantar el script trae 2.883 obras nuevas
-  (las paintings de NGA). El `.aab` ya subido a Play Console (versionCode 10, testing
-  cerrado en curso) quedó con el catálogo VIEJO (11.351 obras) — evaluar si conviene
-  regenerarlo con el catálogo nuevo antes de invitar más testers, o dejarlo para una
-  actualización posterior (no bloquea el testing cerrado en sí, solo significa que los
-  testers actuales van a ver el catálogo previo hasta el próximo sync o una reinstalación).
+- [x] ~~Publicar el release de datos con National Gallery of Art en GitHub~~ — hecho el
+  2026-09-04 (release `data-20260904`, 2.883 obras de NGA).
+
+- [ ] **Publicar el release de datos con Smithsonian en GitHub** (integrada el
+  2026-09-04, ver `CLAUDE.md` punto 17 y `docs/bitacora.md`). `harvester/output/artworks.db`
+  y `app/src/main/assets/artworks.db` YA están actualizados (20.293 obras) — falta
+  publicar. **Ojo**: el release `data-20260904` YA existe (con el delta de NGA nomás) —
+  correr `harvester/publish-release.sh` de nuevo con la misma fecha va a chocar con ese
+  tag existente (`gh release create` no permite reusar tag). Antes de correrlo, decidir
+  si conviene: (a) borrar y recrear el release `data-20260904` con el delta acumulado
+  completo del día (NGA + Smithsonian juntos), o (b) publicar un release nuevo con fecha
+  distinta con SOLO el delta de Smithsonian (6.059 obras — el `artworks-delta-20260904.json`
+  local ya quedó pisado por la corrida de Smithsonian, solo tiene esas 6.059, no las de
+  NGA). Cualquiera de las dos formas funciona para el sync (la app solo mira "el último
+  release"), la diferencia es prolijidad del historial de releases en GitHub. El `.aab`
+  ya subido a Play Console (versionCode 10, testing cerrado en curso) sigue con el
+  catálogo viejo (11.351 obras, antes de NGA y Smithsonian) — evaluar si conviene
+  regenerarlo antes de invitar más testers, o dejarlo para una actualización posterior.
 
 - [ ] **Publicar en Google Play** (retomado el 2026-09-01, ver `docs/bitacora.md`). Ya
   resuelto: firma de release, `targetSdk` cumple el requisito 2026, tamaño del APK. Falta:
@@ -151,13 +156,8 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 
   **Ronda de investigación 2026-09-04** (búsqueda web, sin tocar código todavía — ver
   `docs/bitacora.md` para el detalle completo de cada una):
-  - **Smithsonian Institution** — candidato prometedor: 2.8M objetos CC0 (liberado
-    2020), sin restricción comercial. Requiere API key gratuita vía `api.data.gov`
-    (registro simple, no es como Harvard). Ojo: son 19 museos, la mayoría NO son de
-    arte — habría que filtrar a SAAM, National Portrait Gallery, Freer|Sackler,
-    Hirshhorn, Cooper Hewitt. Falta investigar la forma real de los datos (¿imagen en
-    la misma llamada, como el `edm-framed` de Rijks, o hace falta un salto extra?) y
-    límites de cuota reales.
+  - ~~**Smithsonian Institution**~~ — ✅ **integrada el mismo día** (2026-09-04, ver
+    `CLAUDE.md` punto 17 y `docs/bitacora.md`). Catálogo: 14.234 → 20.293 obras.
   - ~~**National Gallery of Art (Washington)**~~ — ✅ **integrada el mismo día**
     (2026-09-04), no se quedó solo en candidato: resultó tan prometedora (CC0 total,
     sin API key) que se implementó en la misma sesión. Ver `CLAUDE.md` punto 16 y

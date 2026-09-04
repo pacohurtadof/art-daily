@@ -18,3 +18,9 @@ CLAUDE.md
 keystore.properties
 *.jks
 *.keystore
+
+# API keys del harvester (ej. Smithsonian Open Access, api.data.gov) — NUNCA subir esto.
+# Ver harvester/.env.example para el formato esperado.
+.env
+*.env
+!*.env.example

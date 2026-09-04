@@ -1,5 +1,111 @@
 # Bitácora — ArtDaily
 
+## 2026-09-04 (continuación 5) — Smithsonian integrado: 6ta fuente, catálogo 14.234 → 20.293
+
+Pedido del usuario, retomando la ronda de investigación de fuentes: "sigamos con las demás
+fuentes de obras". De los 2 candidatos que quedaron sin integrar (Smithsonian, Getty), el
+usuario eligió Smithsonian primero.
+
+**Pregunta clave antes de escribir código**: "si necesitaría una api key para descargar las
+imágenes? porque sería imposible pedirle eso al usuario". Respuesta confirmada en vivo (no
+solo documentación): la key de `api.data.gov` solo tapa el buscador de metadatos
+(`api.si.edu`) — las imágenes se sirven de `ids.si.edu`, un servicio totalmente aparte, sin
+key, `Access-Control-Allow-Origin: *`. Confirmado descargando una imagen real (200 OK, JPEG
+2999×4000px). Mismo patrón que todas las fuentes: la key (cuando hace falta) es del
+harvester, nunca de la app.
+
+**El usuario pasó su propia key** (`9SloZy9clnE6nUUDND2n58xHnfwchpQI3GgGMM7D`, registrada en
+`api.data.gov/signup/`) directo en el chat — se creó `harvester/.env` (nunca commiteado,
+agregado a `.gitignore`: `.env`/`*.env`/`!*.env.example`) + `harvester/.env.example` (sí
+commiteado, plantilla sin la key real) + `EnvConfig.kt` (loader simple, mismo patrón que
+`MovementOverrides`/`PeriodOverrides` — lee un archivo, no hace falta librería de dotenv).
+
+**Investigación real del esquema** (`api.si.edu/openaccess/api/v1.0/search`, verificado con
+la key real, no de memoria): esquema EDAN/IMM (pensado originalmente para XML, muy anidado).
+Mismo gotcha de licencia que NGA: cada `<media>` individual tiene su propio `usage.access`
+(`CC0` vs. `"Usage conditions apply"`), no alcanza con el `metadata_usage.access` a nivel de
+registro. **A diferencia de NGA, acá NO HAY ningún campo tipo `Style`** — solo `topic`
+(tema/sujeto, no movimiento) y `name` (biografía en texto libre, formato inconsistente según
+la unidad: "Nombre, born X-died Y" / "Nombre (1760-1849)" / "Nombre, b. Ciudad, Año–Año" /
+"Nombre, active Año-Año" — el parser de `SmithsonianMapper` solo reconoce bien el primer
+formato, los demás quedan sin año de nacimiento/muerte pero con el nombre completo intacto,
+limitación menor documentada, no bloqueante).
+
+**Filtro por unidad real** (`terms/unit_code`, 47 códigos totales — la mayoría no son de
+arte): SAAM (Arte Americano), NPG (National Portrait Gallery), NMAA (antes Freer|Sackler,
+ahora National Museum of Asian Art — mismo código "NMAA" que antes era "National Museum of
+American Art", cambio de significado confuso pero confirmado con `data_source` real),
+CHNDM (Cooper Hewitt, diseño), HMSG (Hirshhorn). El campo buscable real es `object_type`
+(no `type`), y en **plural** (`"Paintings"`, no `"Painting"` — probado en vivo, singular
+daba 0 resultados). Decisión del usuario: solo `Paintings`, no `Prints` (mismo criterio que
+NGA — CHNDM en particular es mayormente diseño/textiles, no pintura).
+
+**Volumen real** (`object_type:"Paintings" AND online_media_type:Images`, por unidad):
+SAAM 4.067, NPG 672, NMAA 1.416, CHNDM 48, HMSG 159 — total candidatas 6.362, de las cuales
+6.283 mapearon (algunas sin imagen CC0 real pese al filtro `online_media_type`) y 6.059
+quedaron elegibles para el catálogo.
+
+**Implementación** (`harvester/smithsonian/`: `SmithsonianDto`, `SmithsonianApi`,
+`SmithsonianMapper`, `SmithsonianIngester`) — mismo patrón que CMA/AIC (el registro completo
+ya viene en la respuesta de `search`, no hace falta detalle por objeto), paginado real
+(`start`/`rows`, máximo 1000 filas por página verificado en vivo). Tests con un caso real
+verificado (Mary Vaux Walcott, "Painted Trillium").
+
+### Clasificación manual de movimiento/periodo (pedido explícito: "integra paintings y busca los movimientos de cada obra")
+
+Con 1.433 artistas distintos (8x más que NGA), se acordó con el usuario enfocar primero en
+los 152 artistas con 5+ obras (~65% del volumen). Mismo mecanismo que NGA
+(`movement-overrides.csv`/`period-overrides.csv`, `WebFetch` directo a Wikipedia, nunca
+`WebSearch` solo). Hallazgos nuevos de esta ronda:
+
+- **`WebSearch` inventó información al menos 3 veces confirmadas** (George Romney, Eugeniusz
+  Zak, William Penhallow Henderson, H. Lyman Saÿen) — afirmó movimientos que el artículo real
+  de Wikipedia no menciona en absoluto. Se verificó cada uno con `WebFetch` directo antes de
+  aplicar cualquier cosa; sin esa verificación se habrían agregado clasificaciones falsas.
+- **Reutilización de resultados de NGA** cuando el artista es el mismo y no hay ambigüedad de
+  época/género (Eakins, Rembrandt Peale, Henry Ward Ranger, Eichholtz, Homer, Davies) — sin
+  gastar una búsqueda nueva.
+- **Pero NO reutilización ciega cuando sí hay ambigüedad**: George Inness en NGA tenía una
+  sola obra de 1852 (fase temprana, Hudson River School); en Smithsonian sus obras son todas
+  1860-1890 (fase madura) → Tonalismo, un resultado distinto para el mismo artista, correcto
+  por diseño (`MovementOverrides` es por obra, no por artista, justamente para esto). Mismo
+  criterio con Homer Dodge Martin: 3 obras de antes de 1876 → Hudson River School, 2 de
+  después → Escuela de Barbizon, dentro del mismo artista.
+- **Desajuste tema/obra encontrado dos veces** (mismo patrón que Gérôme con NGA): H. Siddons
+  Mowbray es "Orientalist" según su infobox, pero 8 de sus 10 obras en Smithsonian son una
+  serie de escenas bíblicas (Crucifixión, Última Cena, Getsemaní) — se aplicó Orientalismo
+  solo a las 2 que sí son temática orientalista, el resto quedó en `null`. Augustus Vincent
+  Tack es "precursor del expresionismo abstracto" pero sus 5 obras en Smithsonian son
+  retratos convencionales de la National Portrait Gallery — se dejó todo en `null`.
+- **Dinastías chinas por año real del objeto, no por vida del maestro atribuido**: ~161 obras
+  "Formerly attributed to [maestro Song/Yuan]" — el propio museo ya marca la atribución como
+  incierta/probablemente incorrecta, y `creationYearStart` (fecha real estimada del objeto)
+  cae sistemáticamente **siglos después** de la vida del maestro nombrado (ej. "Formerly
+  attributed to Dong Yuan (murió 962)" con obras fechadas 1500-1700). Se calculó la dinastía
+  real por el año del objeto (`Dinastía Song`/`Dinastía Yuan` nuevas en `PeriodNormalizer`,
+  Ming/Qing ya existían), no por el maestro atribuido — hubiera sido una clasificación
+  incorrecta a propósito de fondo.
+- **13 pintores japoneses del periodo Edo** (Hokusai, Kano Tan'yu, Tawaraya Sotatsu, Hon'ami
+  Koetsu, etc.) — acá SÍ se aplicó por artista completo (no por año), porque a diferencia de
+  los casos chinos, estas SON obras genuinas de esos artistas (no "formerly attributed to"),
+  y el periodo histórico de un artista no cambia durante su vida activa.
+- **Filtro por tema dentro de un mismo artista** (Miner Kilbourne Kellogg, Henry Bacon): 59+10
+  obras que incluyen tanto escenas orientalistas reales (Turquía, Persia, Egipto) como
+  paisajes europeos/retratos americanos sin relación — se aplicó Orientalismo solo a las que
+  el título confirma temática relevante (31 de 59 para Kellogg, 8 de 10 para Bacon).
+
+**Resultado final**: 522 obras con movimiento + 430 con periodo = 952 de 6.059 (15.7%) con
+al menos uno de los dos — más bajo que NGA (76-80%) por la dispersión real (1.433 artistas
+vs. 180), quedaron ~97 de los 152 artistas top sin revisar (mayoría resultó en `null`
+correcto: sin movimiento documentado en Wikipedia, mismo patrón que Catlin). Catálogo final:
+**14.234 → 20.293 obras**. Cobertura global de periodo/movimiento: 32.3%. `artworks.db`
+(17MB) y `app/src/main/assets/artworks.db` actualizados. Suite completa en verde.
+
+**Pendiente, no bloqueante**: publicar el release en GitHub (falta hacerlo), y si se retoma
+la clasificación de Smithsonian en el futuro, seguir con los ~97 artistas del top-152 que
+faltan (lista completa reconstruible con la misma consulta SQL: `sourceApi='si' AND
+movement IS NULL AND period IS NULL GROUP BY artistName HAVING count(*)>=5`).
+
 ## 2026-09-04 (continuación 4) — Clasificación manual obra por obra de las 698 sin periodo ni movimiento (vía Wikipedia)
 
 Pedido del usuario tras la corrección de arriba: "para los que no tienen movimiento, vamos de
