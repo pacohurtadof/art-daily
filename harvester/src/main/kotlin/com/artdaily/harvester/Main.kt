@@ -158,6 +158,19 @@ fun main(args: Array<String>) = runBlocking {
         return@runBlocking
     }
 
+    if (args.getOrNull(0) == "export-full") {
+        // Genera un delta.json con el CATÁLOGO COMPLETO actual (no solo lo nuevo/cambiado de
+        // la última corrida) — para publicar un release que deje al día a cualquier
+        // dispositivo de un solo sync, sin importar cuántas cosechas se haya perdido. Mismo
+        // patrón ya usado a mano en releases anteriores (ej. data-20260828/data-20260831).
+        val dbPath = args.getOrNull(1) ?: "output/artworks.db"
+        val outputDir = File(dbPath).absoluteFile.parentFile?.path ?: "output"
+        val all = ArtworkSqliteWriter(dbPath).readAll()
+        val deltaFile = DeltaJsonWriter.write(all, outputDir)
+        println("Catálogo completo: ${all.size} obras -> ${deltaFile?.absolutePath}")
+        return@runBlocking
+    }
+
     if (args.getOrNull(0) == "si") {
         val target = args.getOrNull(1)?.toIntOrNull()
         val dbPath = args.getOrNull(2) ?: "output/artworks.db"

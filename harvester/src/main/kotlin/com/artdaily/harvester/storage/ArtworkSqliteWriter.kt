@@ -165,6 +165,23 @@ class ArtworkSqliteWriter(private val dbPath: String) {
         conn.createStatement().use { it.execute("PRAGMA user_version = $SCHEMA_VERSION") }
     }
 
+    /** Todo el catálogo actual — para publicar un delta "completo" en vez de incremental
+     * (mismo patrón ya usado a mano en releases anteriores, ej. `data-20260828`/`data-20260831`,
+     * cuando conviene que cualquier dispositivo quede al día en un solo sync sin importar
+     * cuántas cosechas se haya perdido). No hace falta abrir una conexión aparte para esto —
+     * se llama después de [write], reutiliza el mismo archivo. */
+    fun readAll(): List<Artwork> {
+        DriverManager.getConnection("jdbc:sqlite:$dbPath").use { conn ->
+            conn.createStatement().use { stmt ->
+                stmt.executeQuery("SELECT * FROM artworks").use { rs ->
+                    val result = mutableListOf<Artwork>()
+                    while (rs.next()) result += rs.toArtwork()
+                    return result
+                }
+            }
+        }
+    }
+
     /** Trae, de los ids dados, los que ya existían en la tabla — para poder diffear. */
     private fun readExisting(conn: Connection, ids: List<String>): Map<String, Artwork> {
         if (ids.isEmpty()) return emptyMap()
