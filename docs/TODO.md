@@ -9,20 +9,15 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
 - [x] ~~Publicar el release de datos con National Gallery of Art en GitHub~~ — hecho el
   2026-09-04 (release `data-20260904`, 2.883 obras de NGA).
 
-- [ ] **Publicar el release de datos con Smithsonian en GitHub** (integrada el
-  2026-09-04, ver `CLAUDE.md` punto 17 y `docs/bitacora.md`). `harvester/output/artworks.db`
-  y `app/src/main/assets/artworks.db` YA están actualizados (20.293 obras) — falta
-  publicar. **Ojo**: el release `data-20260904` YA existe (con el delta de NGA nomás) —
-  correr `harvester/publish-release.sh` de nuevo con la misma fecha va a chocar con ese
-  tag existente (`gh release create` no permite reusar tag). Antes de correrlo, decidir
-  si conviene: (a) borrar y recrear el release `data-20260904` con el delta acumulado
-  completo del día (NGA + Smithsonian juntos), o (b) publicar un release nuevo con fecha
-  distinta con SOLO el delta de Smithsonian (6.059 obras — el `artworks-delta-20260904.json`
-  local ya quedó pisado por la corrida de Smithsonian, solo tiene esas 6.059, no las de
-  NGA). Cualquiera de las dos formas funciona para el sync (la app solo mira "el último
-  release"), la diferencia es prolijidad del historial de releases en GitHub. El `.aab`
-  ya subido a Play Console (versionCode 10, testing cerrado en curso) sigue con el
-  catálogo viejo (11.351 obras, antes de NGA y Smithsonian) — evaluar si conviene
+- [x] ~~Publicar el release de datos con Smithsonian en GitHub~~ — hecho el 2026-09-05
+  (release `data-20260905`), con el comando nuevo `export-full` (`ArtworkSqliteWriter.readAll`)
+  en vez de un script suelto: el delta trae el **catálogo completo** (20.293 obras — NGA +
+  Smithsonian juntos), no solo lo incremental de Smithsonian, para que cualquier
+  dispositivo quede al día en un solo sync sin depender de haber recibido el release
+  `data-20260904` (NGA) primero.
+
+- [ ] El `.aab` ya subido a Play Console (versionCode 10, testing cerrado en curso) sigue
+  con el catálogo viejo (11.351 obras, antes de NGA y Smithsonian) — evaluar si conviene
   regenerarlo antes de invitar más testers, o dejarlo para una actualización posterior.
 
 - [ ] **Publicar en Google Play** (retomado el 2026-09-01, ver `docs/bitacora.md`). Ya
