@@ -34,6 +34,8 @@ object PeriodNormalizer {
         "roman" to "Antigua Roma",
         "edo period" to "Periodo Edo",
         "meiji period" to "Periodo Meiji",
+        "azuchi-momoyama period" to "Periodo Azuchi-Momoyama",
+        "momoyama period" to "Periodo Azuchi-Momoyama",
         "song dynasty" to "Dinastía Song",
         "yuan dynasty" to "Dinastía Yuan",
         "ming dynasty" to "Dinastía Ming",

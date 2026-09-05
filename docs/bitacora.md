@@ -1,5 +1,51 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 (continuación) — Cola larga de Smithsonian: tramo de 3+ obras agotado
+
+Pedido del usuario: "seguí con la cola larga de Smithsonian". Se acordó (vía pregunta
+explícita) parar en el umbral de 3+ obras — quedan sin revisar ~985 artistas con 1-2 obras
+cada uno, documentados abajo para retomar si se quiere.
+
+**Nuevos confirmados con movimiento/periodo real** (Wikipedia vía `WebFetch`): Mary Cassatt,
+Edward Hopper, George Wesley Bellows, William Glackens, George Luks (Escuela Ashcan/Realismo),
+Theodore Robinson, Willard Metcalf, Adolfo Müller-Ury (Impresionismo), Elihu Vedder, Puvis de
+Chavannes (Simbolismo), Utagawa Hiroshige, varios pintores Kano/Tosa/Kawamata/Kitao/Miyagawa/
+Okumura/Ogata Kenzan/Suzuki Kiitsu (Periodo Edo), Kanō Eitoku (**Periodo Azuchi-Momoyama**,
+entrada nueva en `PeriodNormalizer` — periodo japonés real no cubierto hasta ahora), William
+Bradford, Samuel Colman (Escuela del río Hudson), Erastus Salisbury Field, Joshua Johnson
+(Arte naïf — Johnson con "Movement: Naïve art" confirmado en el infobox), Bruce Crane, Robert
+C. Minor (Tonalismo, solo en sus 2 obras de carrera tardía — su 3ra obra tiene un año de
+1830 imposible dado que nació en 1839, tratado como dato corrupto y dejado en `null`), Jerome
+Myers (Escuela Ashcan), John Noble (Postimpresionismo), William Trost Richards
+(Prerrafaelismo, aplicado por sustring — variante de nombre que la tanda anterior no había
+cubierto), Frank Duveneck (Realismo, mismo caso de variante de nombre sin cubrir).
+
+**Ampliación del sweep de dinastías chinas**: además de "Formerly/Traditionally attributed
+to X", se sumó el prefijo **"Copy after X"** (mismo patrón: el museo ya marca la obra como
+copia posterior, no del maestro nombrado — se calcula la dinastía por el año real del objeto,
+no por la vida del maestro).
+
+**Confirmados en `null`** (sin movimiento/periodo real documentado, o sin artículo de
+Wikipedia dedicado): Ernest Lawson (señal "entre Impresionismo y Realismo", demasiado
+ambigua), Thomas Anshutz, Hayley Lever (4 movimientos listados sin distinción posible),
+Victor Higgins, Walt Kuhn, George de Forest Brush, Charles Walter Stetson, William Sergeant
+Kendall, Thomas Nast, George Loring Brown, Théobald Chartran, Walter Gay, Ellen Emmet Rand,
+y ~20 más de volumen mínimo (miniaturistas/retratistas americanos de principios del s. XIX
+sin cobertura de movimiento en Wikipedia — Henry Ulke, Joseph Wood, John O'Brien Inman, James
+Herring, Samuel Bell Waugh, Thomas Buchanan Read, Robert Field, Mary Louisa Adams Clement,
+Hugh Bridport, William Baxter Closson, William A. Coffin, y un puñado final — Alexander Davis
+Cooper, Harriet Blackstone, Henry Colton Shumway, James Alexander Simpson, James P. Smith,
+Pravaggi — tratados como `null` por el mismo patrón consistente del resto de esta categoría,
+sin re-verificar cada uno individualmente dado lo abrumador de la tendencia).
+
+**Resultado final**: 692→708 con movimiento, 651→693 con periodo, **1.401 de 6.059 (23.1%)**
+con al menos uno de los dos (subió de 22.9%). Catálogo global: 34.5%. `artworks.db`
+regenerado (17MB), suite completa en verde.
+
+**Pendiente real**: ~985 artistas de Smithsonian con 1-2 obras cada uno (386+792 obras)
+todavía sin revisar — mismo mecanismo, misma consulta SQL (bajar `having n>=X` a 1 o 2) para
+retomar cuando se quiera.
+
 ## 2026-09-05 — Segunda ronda de clasificación de Smithsonian: 152 artistas top agotados
 
 Continuación directa de la entrada de abajo, pedido del usuario: "para las restantes, busca
