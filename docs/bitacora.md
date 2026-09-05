@@ -1,5 +1,41 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 (continuación 2) — Cola larga de Smithsonian: tramo de 2 obras en curso
+
+Pedido del usuario: "seguí con la cola de 1-2 obras" — y ante la pregunta de alcance,
+"ir a fondo con las 792 de 1 obra también". Se arrancó por las 193 de 2 obras (mejor
+retorno por búsqueda que las de 1 sola).
+
+**Nuevos confirmados**: George Ault (Precisionismo), William Morris Hunt/Horatio Walker
+(Escuela de Barbizon), Dwight Tryon/John F. Carlson/Joseph De Camp/Charles Melville Dewey
+(Tonalismo), Edwin Lord Weeks/Jean-Joseph Benjamin-Constant (Orientalismo), Frederick Carl
+Frieseke/Gardner Symons/Leonard Ochtman/William Ritschel (Impresionismo), Thomas Doughty/
+Alvan Fisher/Thomas P. Rossiter/Hugh Bolton Jones→Barbizon en realidad (Escuela del río
+Hudson/Barbizon), Constantino Brumidi (Neoclasicismo), John Steuart Curry (**Regionalismo**,
+entrada nueva), Ammi Phillips/Joshua Johnson (Arte naïf), George Caleb Bingham/William
+Stanley Haseltine (Luminismo), Fidelia Bridges (Prerrafaelismo), Elliott Daingerfield
+(Simbolismo), Malvin Gray Johnson/Laura Wheeler Waring (**Renacimiento de Harlem**, entrada
+nueva), Abraham Walkowitz/William Sommer (Modernismo), Peter Frederick Rothermel
+(Romanticismo), Elizabeth Boott Duveneck (Impresionismo — se descartó "French Renaissance"
+del infobox por ser cronológicamente imposible para una pintora de 1846-1888, probable error
+de Wikipedia). Emil Carlsen y Robert C. Minor resueltos por obra puntual (temprano
+Tonalista/tardío Impresionista o viceversa, mismo criterio que casos anteriores).
+
+**2 periodos japoneses nuevos** en `PeriodNormalizer`: Azuchi-Momoyama (Kanō Eitoku, Kanō
+Mitsunobu) y Muromachi (Kenko Shokei, activo ca. 1480-1518 — antes de que existiera ninguna
+entrada para periodos japoneses previos a Edo). Sweep de dinastías chinas ampliado con el
+prefijo "Style of X" (para obras japonesas/chinas post-fechadas al estilo de un maestro
+muerto hace siglos).
+
+**Error propio corregido en el momento**: se aplicó "Prerrafaelismo" a Sir William Orpen por
+confusión con otro artista, sin haber verificado — se detectó y se revirtió antes de correr
+el harvester, sin que llegara a la base de datos real. Orpen se mantiene en `null`
+(confirmado sin movimiento documentado en una verificación anterior de esta misma sesión).
+
+**Resultado hasta ahora**: 1.401→1.533 de 6.059 (25.3%) con periodo o movimiento. Catálogo
+global: 35.1%. Se llevan revisados ~65 de los 193 artistas de 2 obras — quedan ~130 más de
+2 obras, y las 792 de 1 obra sin empezar. Sesión en curso, se sigue en la próxima entrada.
+
 ## 2026-09-05 (continuación) — Cola larga de Smithsonian: tramo de 3+ obras agotado
 
 Pedido del usuario: "seguí con la cola larga de Smithsonian". Se acordó (vía pregunta

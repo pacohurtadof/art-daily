@@ -84,6 +84,12 @@ object MovementNormalizer {
         "naive" to "Arte naïf", // movimiento real (ver Naïve art / Art Naïf), no estaba cubierto
         "neo-impressionism" to "Neoimpresionismo", // distinto de Impresionismo (puntillismo/divisionismo, post-1885) — no reusar "Impresionismo"
         "neo-impressionist" to "Neoimpresionismo",
+        // Agregado el 2026-09-05 (cola larga de Smithsonian): movimiento estadounidense real
+        // (Thomas Hart Benton, Grant Wood, John Steuart Curry — pintura figurativa rural de
+        // los 1930s, reacción contra el modernismo europeo), no estaba cubierto.
+        "regionalism" to "Regionalismo",
+        "american regionalism" to "Regionalismo",
+        "harlem renaissance" to "Renacimiento de Harlem",
         // Agregado el 2026-09-04, al clasificar a mano las obras de NGA sin periodo ni
         // movimiento (ver `harvester/data/movement-overrides.csv`): término real y
         // reconocido (infobox de Wikipedia de varios artistas, ej. Modigliani), aunque más
