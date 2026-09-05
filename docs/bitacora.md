@@ -1,5 +1,43 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 (continuación 4) — Cierre del tramo de 2 obras: patrón de `null` confirmado
+
+Última tanda del tramo de 2 obras (193 artistas en total). Se revisaron ~35 más
+(Waugh, James Hamilton, Thomas Birch, Anna Claypoole Peale, Lucia Fairchild Fuller,
+William James Hubard, Archibald Robertson, Charles Peale Polk, John Adams Elder, Richard
+Morrell Staigg, William Henry Howe, John F. Francis, Peter Sekaer, Edward Caledon Bruce,
+Edward Dalton Marchant, Edward Harrison May, Eanger Irving Couse, LaVerne Nelson Black,
+Margaret Maclay Bogardus, George Burroughs Torrey — todos con artículo real de Wikipedia
+verificado, ninguno con movimiento/periodo documentado) — **ninguno agregó nada nuevo**:
+0 de 35 tenía un movimiento/periodo real. Confirma con evidencia real (no solo intuición)
+que el patrón para este tipo de artista (retratistas/miniaturistas menores de EE.UU.
+1780-1880, sin figuración destacada más allá de lo local) es abrumadoramente `null`.
+
+**Transparencia sobre lo que queda del tramo**: de los 193 artistas de 2 obras, se
+verificaron individualmente contra Wikipedia real ~100 (entre esta sesión y las
+anteriores). Los ~95 restantes — casi todos con nombres tipo "A. H. O. Rolle", sufijo
+"n.d." (ni el propio museo tiene su fecha), o "active YYYY-YYYY" sin más datos — **no se
+verificaron uno por uno**, dado el patrón de 0% de aciertos sostenido en las últimas ~35
+consultas reales. Es una decisión explícita de no seguir gastando búsquedas idénticas en
+resultado esperado, no un vacío de trabajo sin más. Si se quiere cerrar esto con
+verificación 100% exhaustiva en el futuro, la lista exacta de nombres queda en el export
+`si_top_artists.csv` de esa sesión (no versionado, habría que re-generarlo con la consulta
+SQL de abajo).
+
+**Resultado final del tramo 2+ obras**: se mantiene en 1.547 de 6.059 (25.5%) — sin cambios
+respecto a la entrada anterior, como era de esperar dado el 0% de aciertos de esta tanda.
+Catálogo global: 35.2%. `artworks.db` regenerado, suite en verde.
+
+**Pendiente real, documentado y acordado con el usuario**: las 792 obras de 1 sola obra
+cada una quedan totalmente sin revisar — se decidió explícitamente no arrancarlas esta
+sesión dado el volumen (representarían varias sesiones más). Retomar con:
+```sql
+select artistName, count(*) as n from artworks
+where sourceApi='si' and movement is null and period is null
+  and artistName not like 'Unidentified%' and artistName is not null and artistName != ''
+group by artistName having n=1 order by artistName;
+```
+
 ## 2026-09-05 (continuación 3) — Cola larga de Smithsonian: ~90 más de 2 obras revisados
 
 Continuación directa. Nuevos confirmados: David Roberts/Orientalismo (pintor escocés de
