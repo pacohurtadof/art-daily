@@ -1,5 +1,76 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 — Segunda ronda de clasificación de Smithsonian: 152 artistas top agotados
+
+Continuación directa de la entrada de abajo, pedido del usuario: "para las restantes, busca
+su periodo y movimiento". Se terminó de revisar el 100% de los 152 artistas con 5+ obras (y
+buena parte del tramo de 4 obras) — la sesión anterior había cubierto ~55.
+
+**Hallazgo importante de higiene de datos**: varios artistas ya clasificados en la ronda
+anterior no se estaban aplicando a TODAS sus obras porque el mismo humano aparece con
+distintos formatos de nombre en Smithsonian ("Childe Hassam" vs. "Childe Hassam, American, b.
+Boston, Massachusetts, 1859–1935", "Alexander Helwig Wyant" vs. "Alexander H. Wyant", "John
+Vanderlyn" vs. "John Vanderlyn, 15 Oct 1775 - 23 Sep 1852"). Se armó un script de "catch-up"
+que aplica los movimientos/periodos ya decididos contra CUALQUIER variante del nombre del
+mismo artista — recuperó 269 obras que se habían quedado afuera solo por el formato del
+string, no por falta de investigación real.
+
+**Mismo hallazgo con los pintores chinos "Traditionally attributed to"**: la tanda anterior
+solo había cubierto el prefijo "Formerly attributed to" — "Traditionally attributed to X" es
+el mismo patrón (atribución incierta, fecha real del objeto muy posterior a la vida del
+maestro nombrado) pero con otro prefijo; se sumó al mismo cálculo de dinastía por año.
+
+**Nuevos artistas investigados esta ronda** (Wikipedia real vía `WebFetch`): John Singer
+Sargent (Impresionismo), Joseph Stella (Precisionismo solo en sus obras de temática
+industrial — "Steel Mill", "Metropolitan Port" —, no en su retrato temprano de 1909 ni en
+"Neapolitan Song"), Emanuel Leutze (Romanticismo), Asher B. Durand (Escuela del río Hudson),
+Raden Saleh (Romanticismo — pintor javanés, pionero del romanticismo fuera de Europa),
+Elizabeth Nourse (Realismo), Robert Walter Weir (Escuela del río Hudson), Robert Reid
+(Impresionismo), Anne Goldthwaite (Modernismo), Edmund C. Tarbell (Impresionismo, confirmado
+con "American Impressionist painter" en la primera oración del artículo), Arthur B. Carles
+(Modernismo, "Movement: American Modernism" en infobox), Tawaraya Sori III (Periodo Edo).
+
+**Caso especial: Cecilia Beaux** — el infobox de Wikipedia dice "Movement: Impressionism",
+pero el cuerpo del artículo lo contradice explícitamente: "would not align with
+Impressionism", "remained a realist painter throughout her career". Se priorizó el texto
+sobre el infobox (probablemente desactualizado) y se aplicó **Realismo**, no Impresionismo —
+única vez en todo el proceso que se resolvió una contradicción infobox-vs-texto a favor del
+texto en lugar de dejar `null`, justificado porque el texto es explícito y contundente, no
+una mención ambigua.
+
+**Confirmados en `null` con búsqueda real** (sin movimiento documentado en Wikipedia, o sin
+artículo dedicado): Frank Edwin Scott, Cass Gilbert (arquitecto, no pintor — sus "pinturas"
+en el catálogo son estudios arquitectónicos de estudiante), William Henry Holmes, Antonio
+Zeno Shindler, H. Lyman Saÿen (a pesar de que fuentes no-Wikipedia lo llaman "fauvista", el
+artículo real no lo menciona), George Elbert Burr, Louis Eilshemius, Carl Moon, Alice Pike
+Barney (señal de "influencia simbolista" demasiado débil y sin coincidir con los títulos de
+sus obras en el catálogo, mayormente retratos convencionales), Theodore J. Richardson,
+Carroll Beckwith (señal contradictoria: infobox dice "Naturalism", categorías dicen
+"Impressionist" — se dejó en null por la misma disciplina que otros casos duales), William
+Penhallow Henderson (otro caso real de `WebSearch` inventando "sugiere Postimpresionismo"
+que el artículo real no menciona), Henry Brintnell Bounetheau, Spencer Nichols, James Peale,
+Kenyon Cox, Lawrence W. Ladd, Eliphalet Fraser Andrews, Elbridge Ayer Burbank, Carl Newman,
+Josephine Joy (sin artículo propio en Wikipedia), Thomas Hicks, y ~15 más de menor volumen
+(Malbone, King, Stanley, Stuart, Church, Woolf, de László, Bruce, Robertson, Balling,
+Trumbull, Moser, Butler, Inman, Gill, Fraser, Trott, Shirlaw, Pine, Weyl, Dodge, Copley,
+Wiles, Deming, Norman, Elliott, Tack, Anson Dickinson, William de Leftwich Dodge, Norton,
+Dunlap, Le Clear, Frothingham, Dougherty, Lay, Russell, Bohm, John White Alexander, La
+Farge, John Henry Brown, Carlin, Neagle, Emma Beach Thayer, Carolus-Duran, Eleanor Harris,
+Edward Lamson Henry, Eastman Johnson, Cephas Thompson, Sesson Shukei).
+
+**Resultado final de esta ronda**: 644 obras con movimiento + 651 con periodo = **1.295 de
+6.059 (21.4%)** con al menos uno de los dos (subió de 15.7% a 21.4%). Catálogo global de
+periodo/movimiento: 33.9%. `artworks.db`/`app/src/main/assets/artworks.db` regenerados
+(17MB). Suite completa en verde.
+
+**Pendiente real, no agotado**: quedan ~1.300 artistas de Smithsonian con menos de 4 obras
+cada uno (la cola larga) sin revisar — se decidió no seguir ahí por ahora porque el
+rendimiento por búsqueda cae mucho (una consulta de Wikipedia por cada 1-3 obras, contra
+5-750 de los artistas ya cubiertos). El top de artistas con 4+ obras quedó prácticamente
+agotado (unos pocos casos sin artículo de Wikipedia, documentados arriba, no son trabajo
+pendiente sino respuesta ya confirmada). Retomar con la misma consulta SQL de la entrada de
+abajo, bajando el umbral `having n>=X` según cuánto se quiera seguir.
+
 ## 2026-09-04 (continuación 5) — Smithsonian integrado: 6ta fuente, catálogo 14.234 → 20.293
 
 Pedido del usuario, retomando la ronda de investigación de fuentes: "sigamos con las demás
