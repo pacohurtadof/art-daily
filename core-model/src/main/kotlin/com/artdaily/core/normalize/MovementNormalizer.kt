@@ -90,6 +90,7 @@ object MovementNormalizer {
         "regionalism" to "Regionalismo",
         "american regionalism" to "Regionalismo",
         "harlem renaissance" to "Renacimiento de Harlem",
+        "synchromism" to "Sincromismo", // primer movimiento vanguardista estadounidense con reconocimiento internacional (Stanton MacDonald-Wright, Morgan Russell)
         // Agregado el 2026-09-04, al clasificar a mano las obras de NGA sin periodo ni
         // movimiento (ver `harvester/data/movement-overrides.csv`): término real y
         // reconocido (infobox de Wikipedia de varios artistas, ej. Modigliani), aunque más

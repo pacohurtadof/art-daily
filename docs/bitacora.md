@@ -1,5 +1,51 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 (continuación 5) — Cola de 1 obra: arrancada, gran salto por sweep de arte asiático
+
+Pedido del usuario: "seguí con la cola de 1 obra" (761 artistas). Antes de investigar
+individualmente, se corrió el sweep de "catch-up" (mismo mecanismo que en tandas
+anteriores, con el diccionario acumulado de movimientos/periodos ya decididos) contra
+la lista completa — **recuperó 103 obras de un saque**, la mayoría pinturas/rollos
+chinos y japoneses con atribución incierta ("Attributed to X", "Traditionally
+attributed to X", "Style of X") que dominan el tramo de 1 obra (el fondo Freer|Sackler
+tiene muchísimas piezas únicas de este tipo). Confirma que gran parte de la cola de 1
+obra es en realidad arte asiático de atribución incierta, no retratistas occidentales
+menores como en el tramo de 2 obras.
+
+**Nuevos confirmados por Wikipedia real** (WebFetch): Angelica Kauffmann/Neoclasicismo,
+Arshile Gorky/Expresionismo abstracto, Edgar Degas/Impresionismo, Louis Comfort
+Tiffany/Art Nouveau, Thomas Cole/Escuela del río Hudson (fundador), John
+Sloan/Escuela Ashcan, Charles Demuth/Precisionismo, Stanton MacDonald-Wright
+(**Sincromismo**, entrada nueva — primer movimiento vanguardista estadounidense con
+reconocimiento internacional), Robert William Vonnoh/Charles Courtney Curran/Robert
+Spencer/W. Elmer Schofield/Edward Potthast/Richard E. Miller/Charles H. Davis
+(Impresionismo, varios "Pennsylvania Impressionism"), Charles Warren Eaton/Birge
+Harrison (Tonalismo), Jervis McEntee/William Louis Sonntag/William M. Hart/James M.
+Hart/Thomas Cole (Escuela del río Hudson), Robert Swain Gifford (Escuela de Barbizon),
+Washington Allston/Peter Frederick Rothermel-tipo (Romanticismo), Morton Schamberg/
+Charles Rosen (Precisionismo — Rosen solo en su obra tardía de 1934, tras su viraje de
+Impresionista a Modernista ~1920), Horace Pippin/Thomas Chambers (**Arte naïf** — Chambers
+"generally classified as a Primitivist" en Wikipedia, tratado como sinónimo de naïf en
+vez de agregar una categoría nueva casi redundante), Manierre Dawson/Arte abstracto,
+Peter Paul Rubens/Sir Anthony van Dyck/Bonifazio di Pitati/Sebastiano Mazzoni (periodo
+Barroco/Renacimiento), Benvenuto Tisi da Garofalo (Renacimiento, pese a un año de obra
+corrupto en los datos — "1400" para un pintor 1481-1559 — se usó el periodo conocido del
+artista en vez del año no confiable).
+
+**Confirmados en `null`**: William Sidney Mount (su especialidad real es "genre
+painting", no clasificada; Hudson River School/Luminism aparecen solo como categorías
+laterales, no como su identidad), Julius LeBlanc Stewart (es "Orientalist" según su
+infobox, pero su única obra en el catálogo es un desnudo académico genérico sin ninguna
+relación temática — mismo criterio que Mowbray/Gérôme antes), William Rimmer (se
+describe explícitamente como un rebelde contra las normas de su época, no como miembro
+de un movimiento), Glenn O. Coleman (estilo descrito como afín al Ashcan pero el
+término nunca se usa en el artículo), Ben Foster/Franklin De Haven/Grafton Tyler
+Brown/Robert Frederick Blum (sin movimiento documentado o sin artículo dedicado).
+
+**Resultado hasta ahora**: 1.547→1.685 de 6.059 (27.8%). Catálogo global: 35.9%.
+Quedan ~700 de los 761 artistas de 1 obra sin revisar individualmente todavía (el sweep
+resolvió 103 de un saque sin necesidad de búsqueda uno por uno). Sesión en curso.
+
 ## 2026-09-05 (continuación 4) — Cierre del tramo de 2 obras: patrón de `null` confirmado
 
 Última tanda del tramo de 2 obras (193 artistas en total). Se revisaron ~35 más
