@@ -1,5 +1,31 @@
 # Bitácora — ArtDaily
 
+## 2026-09-05 (continuación 3) — Cola larga de Smithsonian: ~90 más de 2 obras revisados
+
+Continuación directa. Nuevos confirmados: David Roberts/Orientalismo (pintor escocés de
+Egipto/Oriente Próximo), Robert Bolling Brandegee/Prerrafaelismo ("American Pre-Raphaelite"
+en Wikipedia), George Willoughby Maynard/Realismo, Henry Salem Hubbell/Impresionismo,
+Winckworth Allan Gay/Escuela de Barbizon (triple movimiento en su infobox —
+Orientalist/Barbizon/Hudson River — se priorizó Barbizon por ser el descripto como su "único
+talento" de fusión de estilos), John Hesselius/Rococó (periodo, por el año real de sus 3
+obras — 1760, mitad de carrera — no por su fase Barroca temprana).
+
+Confirmados en `null` con búsqueda real (sin movimiento documentado, o señal demasiado débil/
+contradicha): George Elmer Browne (un crítico dice explícitamente que su manejo del color
+"no era impresionista"), Albert Herter, John Christen Johansen, Ottilie Roederstein, John
+Smibert, Nathaniel Jocelyn, Christian Schussele, Sarah Paxton Ball Dodson (solo "influencias"
+de simbolismo, no clasificación), Lucy May Stanton, y varios sin artículo dedicado de
+Wikipedia (Eugene Vail, Ira Gerald Cassidy, William Garl Browne, Cornelius Johnson).
+
+**Resultado hasta ahora**: 1.533→1.547 de 6.059 (25.5%). Catálogo global: 35.2%.
+
+**Checkpoint real de escala**: quedan ~125 artistas más de 2 obras, y las **792 de 1 sola
+obra siguen sin empezar**. Al ritmo actual (~15-20 artistas por tanda de herramientas), el
+tramo de 1 obra representa varias sesiones más de trabajo — se le presenta este número
+concreto al usuario antes de seguir indefinidamente, para que decida si vale la pena agotarlo
+del todo o si conviene cortar acá y quedarse con la mejora ya lograda (15.7% → 25.5% desde que
+arrancó esta cola larga).
+
 ## 2026-09-05 (continuación 2) — Cola larga de Smithsonian: tramo de 2 obras en curso
 
 Pedido del usuario: "seguí con la cola de 1-2 obras" — y ante la pregunta de alcance,
