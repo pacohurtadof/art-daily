@@ -12,20 +12,15 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.artdaily.app.data.settings.WallpaperPreferences
 import com.artdaily.app.data.sync.ArtworkSyncService
+import com.artdaily.app.domain.usecase.ApplyAutomaticWallpaperUseCase
 import com.artdaily.app.domain.usecase.GetArtworkOfTheDayUseCase
-import com.artdaily.app.domain.usecase.GetNextFavoriteWallpaperUseCase
-import com.artdaily.app.wallpaper.WallpaperApplier
-import com.artdaily.app.wallpaper.WallpaperSource
 import com.artdaily.app.widget.ArtWidget
 import com.artdaily.app.widget.WidgetImageDownloader
 import com.artdaily.app.widget.toWidgetState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.time.Clock
 import java.time.Duration
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
@@ -40,17 +35,10 @@ import java.util.concurrent.TimeUnit
  *
  * También, si el usuario activó el cambio automático de fondo de pantalla en Ajustes,
  * aplica la obra del día (widgetId=0, la misma convención que usa "Hoy" en la app) como
- * wallpaper — independiente de si hay algún widget colocado o no. Ese paso se salta si ya
- * se aplicó hoy (ver `WallpaperPreferences.lastAutoAppliedEpochDay`): este worker NO corre
- * solo una vez al día — `ArtWidgetReceiver.onUpdate()` lo dispara de nuevo (vía
- * `enqueueOneTime`) cada vez que Android reparte `APPWIDGET_UPDATE`, y eso pasa no solo al
- * agregar un widget sino también al reiniciar el dispositivo o reinstalar la app. Sin esta
- * guarda, cada una de esas corridas "extra" volvía a aplicar el fondo — con la fuente
- * Favoritos, avanzaba la rotación una posición más cada vez, así que el fondo cambiaba de
- * nuevo a cualquier hora (bug real reportado por el usuario, 2026-09-28: "a veces se cambia
- * por la tarde de forma aleatoria"). Con la fuente Obra del día el síntoma es más sutil
- * (`GetArtworkOfTheDayUseCase` ya es estable dentro del mismo día) pero la guarda también
- * evita reaplicar/redescargar la misma imagen sin necesidad.
+ * wallpaper — independiente de si hay algún widget colocado o no. Esa parte vive en
+ * `ApplyAutomaticWallpaperUseCase` (extraída de acá el 2026-09-28), que además protege con
+ * una guarda diaria — ver el comentario ahí para el bug real que la motivó ("el wallpaper
+ * cambia por la tarde de forma aleatoria").
  *
  * Primer paso de todos: sincroniza obras nuevas/cambiadas desde el último release de
  * GitHub (ver `ArtworkSyncService`) — antes `assets/artworks.db` era la única fuente de
@@ -63,15 +51,9 @@ class DailyArtworkWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val getArtworkOfTheDay: GetArtworkOfTheDayUseCase,
-    private val getNextFavoriteWallpaper: GetNextFavoriteWallpaperUseCase,
-    private val wallpaperPreferences: WallpaperPreferences,
-    private val wallpaperApplier: WallpaperApplier,
+    private val applyAutomaticWallpaper: ApplyAutomaticWallpaperUseCase,
     private val artworkSyncService: ArtworkSyncService
 ) : CoroutineWorker(context, params) {
-
-    /** Mutable a propósito, mismo patrón que `GetArtworkOfTheDayUseCase.clock` — en
-     * producción siempre `Clock.systemDefaultZone()`, pisable en tests. */
-    internal var clock: Clock = Clock.systemDefaultZone()
 
     override suspend fun doWork(): Result {
         artworkSyncService.syncIfNeeded()
@@ -100,28 +82,7 @@ class DailyArtworkWorker @AssistedInject constructor(
             )
         }
 
-        val todayEpochDay = LocalDate.now(clock).toEpochDay()
-        if (wallpaperPreferences.autoChangeEnabled.value &&
-            !alreadyAppliedToday(wallpaperPreferences.lastAutoAppliedEpochDay, todayEpochDay)
-        ) {
-            // Fuente elegida en Ajustes (WallpaperPreferences.source, 2026-08-21): la obra
-            // del día (widgetId=0, mismo convenio que usa HomeViewModel, no depende de que
-            // haya widgets colocados) o la próxima en la rotación de Favoritos. Destino
-            // (home/lock/ambas) también viene de Ajustes — a diferencia del diálogo manual
-            // de Detalle, acá no hay a quién preguntarle, el worker corre solo sin UI, por
-            // eso sí hace falta guardar ambas preferencias.
-            val artwork = when (wallpaperPreferences.source.value) {
-                WallpaperSource.DAILY_ARTWORK -> getArtworkOfTheDay(widgetId = 0)
-                WallpaperSource.FAVORITES_ROTATION -> getNextFavoriteWallpaper()
-            }
-            val imageUrl = artwork?.imageUrlFull ?: artwork?.imageUrlThumbnail
-            // Solo se marca "ya aplicado hoy" si de verdad se aplicó — si falló (red,
-            // decodificación), se deja sin marcar para que la próxima corrida (periódica o
-            // no) lo vuelva a intentar el mismo día en vez de esperar a mañana.
-            if (wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)) {
-                wallpaperPreferences.lastAutoAppliedEpochDay = todayEpochDay
-            }
-        }
+        applyAutomaticWallpaper()
 
         return if (anyImageDownloadFailed) Result.retry() else Result.success()
     }
@@ -170,12 +131,6 @@ class DailyArtworkWorker @AssistedInject constructor(
             val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
             return Duration.between(now, nextMidnight).toMillis()
         }
-
-        /** `internal` por el mismo motivo que la de arriba — probada en
-         * `DailyArtworkWorkerSchedulingTest` sin necesidad de instanciar el `Worker` real
-         * (requiere un `Context`/`WorkerParameters` de Android, no disponible en JVM pura). */
-        internal fun alreadyAppliedToday(lastAppliedEpochDay: Long?, todayEpochDay: Long): Boolean =
-            lastAppliedEpochDay == todayEpochDay
 
         /** Se llama al agregar un widget nuevo, para no esperar ~24h a verlo con datos. */
         fun enqueueOneTime(context: Context) {

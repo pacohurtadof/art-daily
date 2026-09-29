@@ -4,14 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artdaily.app.data.local.FavoriteDao
 import com.artdaily.app.data.settings.WallpaperPreferences
-import com.artdaily.app.domain.usecase.GetArtworkOfTheDayUseCase
-import com.artdaily.app.domain.usecase.GetNextFavoriteWallpaperUseCase
-import com.artdaily.app.wallpaper.WallpaperApplier
+import com.artdaily.app.domain.usecase.ApplyAutomaticWallpaperUseCase
 import com.artdaily.app.wallpaper.WallpaperResult
 import com.artdaily.app.wallpaper.WallpaperSource
 import com.artdaily.app.wallpaper.WallpaperTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,12 +26,13 @@ data class SettingsUiState(
 
 /**
  * `autoChangeEnabled`/`target`/`source` vienen directo de `WallpaperPreferences`. Activar
- * el toggle (o cambiar el destino/fuente mientras ya está activo) aplica ya mismo — el
- * cambio real corre dentro de `DailyArtworkWorker`, que ya se programó una vez al abrir la
- * app (`ExistingPeriodicWorkPolicy.KEEP`) con su propio ciclo de ~24h; sin este fix, tocar
- * el toggle no se nota hasta el próximo ciclo (bug real reportado por el usuario:
- * "activé el toggle pero no pasó nada con mi fondo"). Mismo criterio que
- * `DailyArtworkWorker.enqueueOneTime` ya usaba para no esperar al agregar un widget.
+ * el toggle (o cambiar el destino/fuente mientras ya está activo) aplica ya mismo, vía
+ * `ApplyAutomaticWallpaperUseCase(bypassDailyGuard = true)` — la misma lógica que usa
+ * `DailyArtworkWorker` para el ciclo automático de ~24h, pero saltando la guarda de "ya
+ * aplicado hoy" porque acá SÍ hay un usuario esperando ver el resultado ya mismo (bug real
+ * ya arreglado antes, 2026-08-21: "activé el toggle pero no pasó nada con mi fondo"). Mismo
+ * criterio que `DailyArtworkWorker.enqueueOneTime` ya usaba para no esperar al agregar un
+ * widget.
  *
  * `favoritesCount` es solo para la UI (mostrar un aviso si se elige "rotar entre
  * favoritos" sin tener ninguno guardado todavía) — el cálculo real de rotación vive en
@@ -43,9 +41,7 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val wallpaperPreferences: WallpaperPreferences,
-    private val getArtworkOfTheDay: GetArtworkOfTheDayUseCase,
-    private val getNextFavoriteWallpaper: GetNextFavoriteWallpaperUseCase,
-    private val wallpaperApplier: WallpaperApplier,
+    private val applyAutomaticWallpaper: ApplyAutomaticWallpaperUseCase,
     favoriteDao: FavoriteDao
 ) : ViewModel() {
 
@@ -87,23 +83,7 @@ class SettingsViewModel @Inject constructor(
     private fun applyWallpaperNow() {
         viewModelScope.launch {
             _uiState.update { it.copy(isApplyingWallpaper = true, wallpaperResult = null) }
-            // widgetId=0 = "obra del día" de la app principal — mismo convenio que usa
-            // "Hoy" y el propio DailyArtworkWorker. Si la fuente es Favoritos, se usa la
-            // rotación en vez de la obra del día.
-            val artwork = when (wallpaperPreferences.source.value) {
-                WallpaperSource.DAILY_ARTWORK -> getArtworkOfTheDay(widgetId = 0)
-                WallpaperSource.FAVORITES_ROTATION -> getNextFavoriteWallpaper()
-            }
-            val imageUrl = artwork?.imageUrlFull ?: artwork?.imageUrlThumbnail
-            val success = wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)
-            if (success) {
-                // Mismo motivo que en `DailyArtworkWorker`: si ya se aplicó hoy desde acá
-                // (el usuario recién tocó el toggle/selector), una corrida "extra" del
-                // worker más tarde el mismo día (reinicio del teléfono, reinstalación de la
-                // app) no debería pisarlo — sobre todo con fuente Favoritos, que si no
-                // avanzaría la rotación una posición más sin que el usuario lo pidiera.
-                wallpaperPreferences.lastAutoAppliedEpochDay = LocalDate.now().toEpochDay()
-            }
+            val success = applyAutomaticWallpaper(bypassDailyGuard = true)
             _uiState.update {
                 it.copy(
                     isApplyingWallpaper = false,

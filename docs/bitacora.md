@@ -1,5 +1,56 @@
 # Bitácora — ArtDaily
 
+## 2026-09-28 (continuación) — Cierra el agujero de testing: WallpaperPreferences y WallpaperApplier ahora son interfaces
+
+El usuario preguntó por qué los tests de cruce de medianoche ya existentes no atraparon el
+bug de la entrada de abajo, y pidió cerrar el agujero real en vez de solo documentarlo.
+
+**Diagnóstico del agujero** (confirmado leyendo el código, no supuesto): los tests existentes
+(`GetArtworkOfTheDayUseCaseTest` con `Clock.fixed`) prueban que ESA clase específica es
+estable dentro del día — y lo es, por eso la fuente "Obra del día" no mostraba el bug visible.
+El agujero real estaba en dos lugares que nunca tuvieron NINGÚN test:
+1. `GetNextFavoriteWallpaperUseCase` — cero tests. Estructuralmente costoso de testear porque
+   dependía de `WallpaperPreferences`, una clase concreta atada a `Context`/
+   `SharedPreferences`, no una interfaz — no había forma de "fakearla" sin Robolectric.
+2. `DailyArtworkWorker.doWork()` en sí — nunca corrió en ningún test. Es un `CoroutineWorker`
+   acoplado a `GlanceAppWidgetManager`/`Context`, y el proyecto decidió a propósito (2026-08-17)
+   no usar Robolectric. La suposición "corre una vez al día" vivía solo en un comentario,
+   nunca en una aserción.
+
+**Refactor para cerrar el agujero** (mismo patrón que `ArtworkRepository`/`ArtworkRepositoryImpl`
+ya usado en el proyecto — interfaz + impl + `@Binds` en un módulo Hilt):
+- `WallpaperPreferences` pasa a ser interfaz; la implementación real (con `SharedPreferences`)
+  se movió a `WallpaperPreferencesImpl`. Nuevo `SettingsModule.kt` (`@Binds`).
+- `WallpaperApplier` mismo tratamiento — interfaz + `WallpaperApplierImpl` (Coil +
+  `WallpaperManager`). Nuevo `WallpaperModule.kt`.
+- **`ApplyAutomaticWallpaperUseCase` nuevo** (`domain/usecase/`) — se extrajo la lógica entera
+  del bloque de wallpaper automático que vivía inline en `DailyArtworkWorker.doWork()` (la
+  guarda diaria del fix de la entrada de abajo, más la elección de fuente). `Clock` inyectable,
+  mismo patrón que `GetArtworkOfTheDayUseCase.clock`. Parámetro `bypassDailyGuard` para
+  distinguir la corrida automática del worker (respeta la guarda) de una acción explícita del
+  usuario en Ajustes (la salta, tiene que notarse ya mismo). `DailyArtworkWorker.doWork()`
+  ahora es una sola línea (`applyAutomaticWallpaper()`) en vez de tener la lógica inline.
+  `SettingsViewModel.applyWallpaperNow()` también se simplificó a un solo call
+  (`applyAutomaticWallpaper(bypassDailyGuard = true)`), sacando la duplicación que tenía con
+  el worker.
+
+**Tests nuevos, todos en `app/src/test/.../domain/usecase/`** — con `FakeWallpaperPreferences`,
+`FakeWallpaperApplier` y `FakeFavoriteDao` nuevos (mismo estilo que `FakeWidgetConfigDao`
+existente):
+- `GetNextFavoriteWallpaperUseCaseTest` — documenta EXPLÍCITAMENTE que esta clase avanza la
+  rotación en cada llamada, sin noción de día (por diseño) — la razón exacta por la que la
+  guarda tiene que vivir un nivel arriba.
+- `ApplyAutomaticWallpaperUseCaseTest` — el test que de verdad reproduce el bug: dos llamadas
+  el mismo día de calendario (`Clock.fixed`) con fuente Favoritos NO vuelven a avanzar la
+  rotación (antes del fix, sí lo hubiera hecho). Más: cruce de día sí vuelve a aplicar,
+  `bypassDailyGuard=true` aplica igual aunque ya se haya aplicado hoy, una falla de
+  `WallpaperApplier` no marca el día (permite reintentar), y un test aparte confirmando que
+  con fuente Obra del día el bug era más sutil (misma obra reaplicada, no una distinta) —
+  exactamente lo que se le explicó al usuario antes de este refactor.
+
+Suite completa (`./gradlew test`) y `assembleDebug` completo (Hilt resuelve el grafo con las
+dos interfaces nuevas sin problemas) verificados en verde.
+
 ## 2026-09-28 — Bug reportado: "el wallpaper no siempre se actualiza a medianoche, a veces cambia por la tarde de forma aleatoria"
 
 Reporte del usuario, sesión nueva (sin cambios en el repo desde el 2026-09-05). Investigación
