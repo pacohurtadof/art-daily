@@ -16,9 +16,15 @@ detalle día a día de lo ya hecho, ver `docs/bitacora.md`.
   dispositivo quede al día en un solo sync sin depender de haber recibido el release
   `data-20260904` (NGA) primero.
 
-- [ ] El `.aab` ya subido a Play Console (versionCode 10, testing cerrado en curso) sigue
-  con el catálogo viejo (11.351 obras, antes de NGA y Smithsonian) — evaluar si conviene
-  regenerarlo antes de invitar más testers, o dejarlo para una actualización posterior.
+- [ ] **Regenerar y subir un `.aab` nuevo a Play Console** (versionCode 11) — el que está en
+  testing cerrado ahora mismo (versionCode 10) quedó congelado desde el 2026-09-02 y no se
+  actualiza solo con lo que se pushea a GitHub (eso hay que hacerlo a mano: `bundleRelease`
+  local + subida manual del usuario a la consola). Lo que le falta:
+  - Catálogo: sigue en 11.351 obras — no tiene NGA ni Smithsonian (hoy ~20.293 en el repo).
+  - El fix del bug de wallpaper del 2026-09-28 ("cambia por la tarde de forma aleatoria" —
+    corridas extra del worker sin guarda diaria, ver `docs/bitacora.md`).
+  Decisión del usuario (2026-09-28): esperar, no hay apuro — juntar esto con más cambios
+  antes de armar el próximo `.aab` en vez de subir uno por cada fix.
 
 - [ ] **Publicar en Google Play** (retomado el 2026-09-01, ver `docs/bitacora.md`). Ya
   resuelto: firma de release, `targetSdk` cumple el requisito 2026, tamaño del APK. Falta:
