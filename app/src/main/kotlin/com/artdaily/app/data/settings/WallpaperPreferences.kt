@@ -69,11 +69,34 @@ class WallpaperPreferences @Inject constructor(@ApplicationContext context: Cont
         get() = prefs.getString(KEY_LAST_FAVORITE_ID, null)
         set(value) { prefs.edit { putString(KEY_LAST_FAVORITE_ID, value) } }
 
+    /** Último día (epoch day, zona local) en que el cambio AUTOMÁTICO de fondo de pantalla
+     * se aplicó de verdad — `DailyArtworkWorker` lo revisa antes de reaplicar, para no
+     * hacerlo dos veces el mismo día de calendario. Sin esto, cada corrida "extra" del
+     * worker (no solo la periódica de medianoche — `ArtWidgetReceiver.onUpdate()` también
+     * la dispara al reiniciar el dispositivo o reinstalar la app, no solo al agregar un
+     * widget) volvía a aplicar el fondo: con fuente Favoritos, avanzaba la rotación una
+     * posición extra cada vez, así que el fondo terminaba cambiando otra vez a cualquier
+     * hora del día (bug real reportado por el usuario, 2026-09-28: "a veces se cambia por
+     * la tarde de forma aleatoria"). No es una preferencia que el usuario elija, mismo
+     * motivo que `lastFavoriteArtworkId` de arriba. */
+    var lastAutoAppliedEpochDay: Long?
+        get() = if (prefs.contains(KEY_LAST_AUTO_APPLIED_DAY)) {
+            prefs.getLong(KEY_LAST_AUTO_APPLIED_DAY, 0L)
+        } else {
+            null
+        }
+        set(value) {
+            prefs.edit {
+                if (value == null) remove(KEY_LAST_AUTO_APPLIED_DAY) else putLong(KEY_LAST_AUTO_APPLIED_DAY, value)
+            }
+        }
+
     private companion object {
         const val PREFS_NAME = "wallpaper_prefs"
         const val KEY_AUTO_ENABLED = "auto_change_enabled"
         const val KEY_TARGET = "target"
         const val KEY_SOURCE = "source"
         const val KEY_LAST_FAVORITE_ID = "last_favorite_artwork_id"
+        const val KEY_LAST_AUTO_APPLIED_DAY = "last_auto_applied_epoch_day"
     }
 }

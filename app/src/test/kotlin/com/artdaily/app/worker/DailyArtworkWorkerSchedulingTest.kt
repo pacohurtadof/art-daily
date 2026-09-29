@@ -47,3 +47,30 @@ class DailyArtworkWorkerSchedulingTest {
         assertEquals(23 * 60 * 60 * 1000L + 59 * 60 * 1000L + 59 * 1000L, millis)
     }
 }
+
+/**
+ * Regresión del bug real reportado por el usuario (2026-09-28): "el wallpaper... a veces se
+ * cambia por la tarde de forma aleatoria". Causa: `ArtWidgetReceiver.onUpdate()` dispara una
+ * corrida "extra" de `DailyArtworkWorker` (vía `enqueueOneTime`) no solo al agregar un
+ * widget, sino cada vez que Android reparte `APPWIDGET_UPDATE` — lo que también pasa al
+ * reiniciar el dispositivo o reinstalar la app. Sin esta guarda, cada corrida extra volvía a
+ * aplicar el fondo automático — con la fuente Favoritos, avanzaba la rotación una posición
+ * más cada vez, visible como un cambio "aleatorio" a cualquier hora.
+ */
+class DailyArtworkWorkerAlreadyAppliedTodayTest {
+
+    @Test
+    fun `no se aplico nunca (null) - no esta aplicado hoy`() {
+        assertEquals(false, DailyArtworkWorker.alreadyAppliedToday(lastAppliedEpochDay = null, todayEpochDay = 19_000L))
+    }
+
+    @Test
+    fun `ya se aplico hoy - se salta la corrida extra`() {
+        assertEquals(true, DailyArtworkWorker.alreadyAppliedToday(lastAppliedEpochDay = 19_000L, todayEpochDay = 19_000L))
+    }
+
+    @Test
+    fun `se aplico un dia distinto (incluido ayer) - no esta aplicado hoy, se vuelve a aplicar`() {
+        assertEquals(false, DailyArtworkWorker.alreadyAppliedToday(lastAppliedEpochDay = 18_999L, todayEpochDay = 19_000L))
+    }
+}

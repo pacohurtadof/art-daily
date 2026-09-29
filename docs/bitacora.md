@@ -1,5 +1,49 @@
 # Bitácora — ArtDaily
 
+## 2026-09-28 — Bug reportado: "el wallpaper no siempre se actualiza a medianoche, a veces cambia por la tarde de forma aleatoria"
+
+Reporte del usuario, sesión nueva (sin cambios en el repo desde el 2026-09-05). Investigación
+completa antes de tocar código:
+
+**Causa real encontrada (y arreglada) — corridas "extra" de `DailyArtworkWorker` sin
+protección**: `ArtWidgetReceiver.onUpdate()` llama `DailyArtworkWorker.enqueueOneTime()` en
+CADA `APPWIDGET_UPDATE` que reparte Android — no solo al agregar un widget (la intención
+original), sino también al reiniciar el dispositivo o reinstalar/actualizar la app. Ninguna
+de esas corridas extra tenía protección: con `WallpaperSource.FAVORITES_ROTATION`, cada una
+avanzaba la rotación una posición más, a cualquier hora, sin relación con el ciclo de
+medianoche. Fix: `WallpaperPreferences.lastAutoAppliedEpochDay` — el bloque de fondo
+automático en `DailyArtworkWorker.doWork()` ahora se salta si ya se aplicó hoy (mismo patrón
+`Clock` inyectable que `GetArtworkOfTheDayUseCase.clock`, función pura testeable
+`alreadyAppliedToday()` en el companion, misma disciplina que `millisUntilNextLocalMidnight`).
+`SettingsViewModel.applyWallpaperNow()` también marca el día al aplicar manualmente, para que
+una corrida extra esa misma tarde no pise un cambio recién hecho a mano. Tests nuevos en
+`DailyArtworkWorkerSchedulingTest.kt`, suite completa en verde.
+
+**Recalibración importante, tras preguntarle al usuario qué fuente usa**: eligió "Obra del
+día", no Favoritos — y para esa fuente el fix de arriba NO explica un cambio VISIBLE, porque
+`GetArtworkOfTheDayUseCase` ya era estable dentro del mismo día de calendario (consulta el
+historial antes de sortear) y `ArtworkSyncService.upsertAll` nunca borra obras del catálogo
+(solo agrega/actualiza), así que la obra ya elegida hoy no puede "desaparecer" y forzar un
+re-sorteo. Se revisó también una posible condición de carrera entre "Hoy" (`HomeViewModel`) y
+el worker corriendo casi al mismo tiempo — descartada, la ventana de carrera real es de
+milisegundos, no explica un cambio horas después.
+
+**Diagnóstico correcto para este caso (no es un segundo bug, es el mismo fenómeno descrito
+dos veces)**: `PeriodicWorkRequest` no garantiza hora exacta — Android puede diferir el
+trabajo periódico por Doze/ahorro de batería (más probable cuanto menos se abre la app), y
+cuando finalmente corre puede aterrizar en cualquier momento del día, tarde incluida. "No
+siempre a medianoche" y "a veces cambia por la tarde" son la misma demora, no dos causas
+distintas. Es un límite real de la arquitectura ya elegida (`CLAUDE.md` descartó
+`AlarmManager` a propósito, por batería) — la única forma de garantizar hora exacta es una
+alarma exacta, que en Android 12+ pide el permiso especial `SCHEDULE_EXACT_ALARM` (el usuario
+tendría que activarlo a mano) y podría complicar la revisión de Play Store justo mientras el
+testing cerrado está en curso.
+
+**Decisión del usuario, presentadas las dos opciones**: aceptar la imprecisión como está por
+ahora — no evaluar alarma exacta. El fix de las corridas extra queda igual (es válido y
+correcto por sí mismo — protege a cualquier usuario con fuente Favoritos y evita trabajo
+redundante), solo que no era la explicación completa para este reporte puntual.
+
 ## 2026-09-05 (continuación 5) — Cola de 1 obra: arrancada, gran salto por sweep de arte asiático
 
 Pedido del usuario: "seguí con la cola de 1 obra" (761 artistas). Antes de investigar

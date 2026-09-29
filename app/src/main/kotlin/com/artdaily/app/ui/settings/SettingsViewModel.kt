@@ -11,6 +11,7 @@ import com.artdaily.app.wallpaper.WallpaperResult
 import com.artdaily.app.wallpaper.WallpaperSource
 import com.artdaily.app.wallpaper.WallpaperTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -95,6 +96,14 @@ class SettingsViewModel @Inject constructor(
             }
             val imageUrl = artwork?.imageUrlFull ?: artwork?.imageUrlThumbnail
             val success = wallpaperApplier.apply(imageUrl, wallpaperPreferences.target.value)
+            if (success) {
+                // Mismo motivo que en `DailyArtworkWorker`: si ya se aplicó hoy desde acá
+                // (el usuario recién tocó el toggle/selector), una corrida "extra" del
+                // worker más tarde el mismo día (reinicio del teléfono, reinstalación de la
+                // app) no debería pisarlo — sobre todo con fuente Favoritos, que si no
+                // avanzaría la rotación una posición más sin que el usuario lo pidiera.
+                wallpaperPreferences.lastAutoAppliedEpochDay = LocalDate.now().toEpochDay()
+            }
             _uiState.update {
                 it.copy(
                     isApplyingWallpaper = false,
